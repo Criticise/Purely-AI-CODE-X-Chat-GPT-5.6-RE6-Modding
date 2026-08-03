@@ -1,0 +1,87 @@
+RE6 MRL Texture Path Redirection / RE6 MRL 贴图路径重定向
+===============================================================
+
+中文
+----
+
+MRL 中的贴图路径不是 Windows 绝对路径。RE6 默认以 nativePC 作为虚拟根目录，
+MRL 字符串必须从 nativePC 后的第一个目录开始写。
+
+写入的新路径：
+
+    1\2\3
+
+游戏解析到的实际文件：
+
+    nativePC\1\2\3.tex
+
+正确示例：
+
+    arc\Code X\Sonya\BM
+    nativePC\arc\Code X\Sonya\BM.tex
+
+错误示例：
+
+    \arc\Code X\Sonya\BM
+    nativePC\arc\Code X\Sonya\BM
+    nativePC\arc\Code X\Sonya\BM.tex
+    G:\AnyFolder\BM.tex
+
+关键规则：
+
+1. MRL 内保存的是相对虚拟路径，不写 nativePC，不以反斜杠开头，通常也不写
+   .tex 扩展名。
+2. 只修改已确认由游戏加载的目标 MRL 条目；不要用另一份 MRL 覆盖它的完整资源
+   表、纹理槽、动画块或渲染状态。
+3. 路径字符串必须沿用原 MRL 的编码、终止方式、长度和关联资源表结构。不能只按
+   可见文字长度直接覆盖二进制。
+4. 重打包后必须确认目标 MRL 能再次解压和解析，并确认非目标 ARC 条目保持不变。
+5. 游戏目录中的文件位置与 MRL 内的虚拟路径要分别检查。MRL 路径正确，不代表
+   nativePC 下的文件一定存在；反之亦然。
+
+已验证结论：错误路径文本或错误的字符串/资源表改写会让游戏在读取 MRL 时失败，
+表现可能是加载卡住或闪退，而不只是“贴图缺失”。
+
+
+English
+-------
+
+A texture path stored in an RE6 MRL is not a Windows absolute path. RE6 uses
+nativePC as its virtual root, so the MRL string starts at the first directory
+below nativePC.
+
+New path written to the MRL:
+
+    1\2\3
+
+File resolved by the game:
+
+    nativePC\1\2\3.tex
+
+Correct example:
+
+    arc\Code X\Sonya\BM
+    nativePC\arc\Code X\Sonya\BM.tex
+
+Incorrect examples:
+
+    \arc\Code X\Sonya\BM
+    nativePC\arc\Code X\Sonya\BM
+    nativePC\arc\Code X\Sonya\BM.tex
+    G:\AnyFolder\BM.tex
+
+Rules:
+
+1. An MRL stores a relative virtual path: no nativePC prefix, no leading
+   backslash, and normally no .tex extension.
+2. Change only the confirmed MRL entry loaded by the game. Do not replace it
+   with a complete MRL from another resource layout.
+3. Preserve the original MRL string encoding, terminator, length handling, and
+   resource-table contract. Visible text length alone is not a safe binary edit.
+4. After rebuilding, re-extract and parse the target MRL, and verify that
+   unrelated ARC entries remain unchanged.
+5. Check the virtual MRL path and the actual nativePC file location separately.
+
+Verified result: an invalid path or broken string/resource-table rewrite can
+make the game fail while reading the MRL, causing a loading hang or crash rather
+than a simple missing-texture result.

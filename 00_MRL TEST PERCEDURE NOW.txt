@@ -1,0 +1,147 @@
+MRL TEST PERCEDURE NOW
+MRL Material Test Procedure / MRL 材质测试流程
+================================================
+
+中文
+----
+
+这是所有 RE6 MRL 材质改动共用的测试模块。它不负责承诺某个效果一定能实现；它负责
+把“静态文件猜测”变成“由游戏画面确认的定位和修改结果”。
+
+适用范围：贴图重定向、部分 Mesh 半透明、局部自发光、全身自发光、NM/MM 质感迁移、
+高光和其他 MRL 材质状态改动。MOD 在此模块中只用于读取 Mesh -> material 映射，
+不写入、不重建、不改变 MOD 二进制。
+
+一、定位
+
+1. AI 解析目标 MOD 和 MRL，记录 Mesh、material、材质 hash、贴图路径、顶点数以及
+   所有同名 MRL 的 ARC 提供者。
+2. 静态映射只产生候选，不能证明该 material 正在被游戏当前状态绘制。
+3. 局部效果时，AI 将候选 material 的 Albedo 临时改为纯白探针。用户进游戏观察：
+   哪个部位变白、活体或死亡是否命中、LOD 是否变化、不同实例是否使用不同 material。
+4. 命中后，AI 恢复原 Albedo 和原纹理槽。白色探针只用于定位，不能留在最终版本。
+
+二、修改
+
+1. AI 只修改已经被游戏证实命中的 material，并保持该 MRL 自己的纹理路径、资源槽、
+   动画、Blend、Depth、Draw Pass、Alpha Test、Header 和其他无关材料不变。
+2. 局部效果，例如部分 Mesh 半透明：只向定位后的 target material 写入该效果需要的
+   完整 MRL 合同。
+3. 全身自发光：先在一个已命中的 material 上确认自发光合同有效；确认后，对目标 MRL
+   内全部已解析材质统一执行自发光修改，建立全覆盖基线。游戏测试后，再恢复少数不应
+   发光或不兼容的例外材质。
+4. 不复制其他角色的完整 MRL，也不把另一份 MRL 的资源编号、纹理索引或字节偏移当成
+   当前 MRL 的固定答案。
+
+三、回读与游戏验证
+
+1. 修改后重新解析 MRL，确认字符串、资源表、命令块、常量缓冲区和关联偏移完整。
+2. ARC 重打包后重新解压目标条目，确认它能再次解析；无关条目必须保持不变。
+3. 用户在游戏内验收目标部位、活体、死亡、LOD、配件、地图光照和不同实例。
+4. 游戏画面是材质效果是否命中的最终事实。AI 根据反馈撤销探针、修正例外或继续缩小
+   候选范围。
+5. 如果游戏内目标 Mesh 隐身，先检查两项：MRL 修改是否破坏了材质合同，以及
+   Ultimate Trainer - Render Everything 是否已开启。EM1000 敌人修改已验证后者会影响
+   Mesh 可见性；普通 Shader 包（例如 Wilsonso's shader pack）不能替代 Render Everything
+   来让这类 Mesh 正常显示。
+
+核心原则：定位 -> 修改 -> 回读 -> 游戏验证。不要从 Mesh 名称或单次静态解析直接跳到
+最终材质修改。
+
+四、为什么需要这个流程
+
+只根据人类点名的一个 Mesh 去要求 AI 修改 MRL，会把 AI 的行动范围限制在人的一次
+静态判断内。Mesh 名称、MatID 或一次静态映射只能提供候选，不能证明游戏在当前状态、
+LOD、实例或 ARC 提供者下真正绘制了哪个 material。
+
+00_MRL TEST PERCEDURE NOW 因此把人和 AI 放入同一个事实闭环：人定义目标效果并观察
+游戏画面；AI 解析二进制、枚举候选、生成最小修改、回读文件；每一次成功或失败都必须
+有可复查的游戏验证结果。这样 AI 不再只是执行一个可能错误的 Mesh 指令，而是根据事实
+逐步缩小范围并达到目标效果。
+
+未来若出现具备可靠代码理解、运行时观察和视觉验收能力的 AGI，它可以自动执行同样的
+证据闭环：提出候选、运行游戏、观察结果、回查二进制并继续迭代。它是否拥有人的感情
+不改变这条工程规律；关键是它能否更稳定、更完整地完成定位、修改和验证工作。
+
+
+English
+-------
+
+This is the shared test module for every RE6 MRL material edit. It does not
+promise that an effect is possible. It turns a static-file hypothesis into a
+location and modification result confirmed by the game image.
+
+Scope: texture redirection, partial-mesh translucency, local emission,
+whole-model emission, NM/MM material migration, gloss, and other MRL material
+state changes. MOD is read only in this module: it supplies mesh-to-material
+mapping and is not written, rebuilt, or changed as binary data.
+
+1. Locate
+
+1. AI parses the target MOD and MRL, recording meshes, materials, material
+   hashes, texture paths, vertex counts, and every ARC provider of the same
+   MRL path.
+2. Static mapping creates candidates only. It does not prove that a material is
+   drawn in the current game state.
+3. For a local effect, AI temporarily routes each candidate material Albedo to
+   a white probe. In game, the user observes which part becomes white, whether
+   live or death states respond, whether LOD changes, and whether instances use
+   different materials.
+4. Once a candidate is confirmed, AI restores its original Albedo and texture
+   slot. A white probe is a locator only and must not remain in the final build.
+
+2. Modify
+
+1. AI edits only materials proven by the game and retains the target MRL's own
+   texture paths, resource slots, animation, Blend, Depth, Draw Pass, Alpha
+   Test, Header, and unrelated materials.
+2. For a local effect, such as partial-mesh translucency, write the complete
+   MRL contract required by that effect only to the located target material.
+3. For whole-model emission, first prove the emission contract on one confirmed
+   material. Then apply the same emission edit to every parsed material in the
+   target MRL to establish an all-material baseline. After game testing, restore
+   the few materials that should not emit or are not compatible.
+4. Do not copy a complete MRL from another character and do not treat another
+   MRL's resource IDs, texture indices, or byte offsets as a fixed answer for
+   the current MRL.
+
+3. Re-read and Verify in Game
+
+1. Parse the modified MRL again. Confirm that strings, resource tables, command
+   blocks, constant buffers, and related offsets remain valid.
+2. After rebuilding the ARC, extract the target entry again and confirm that it
+   still parses. Unrelated entries must remain unchanged.
+3. The user validates the target part, live state, death state, LOD, equipment,
+   map lighting, and different instances in game.
+4. The game image is the final fact for whether a material effect actually
+   lands. AI uses the feedback to remove probes, correct exceptions, or narrow
+   the candidate set further.
+5. If the target mesh is invisible in game, check two things first: whether the
+   MRL edit broke the material contract, and whether Ultimate Trainer - Render
+   Everything is enabled. EM1000 enemy testing verified that the latter affects
+   mesh visibility. Ordinary shader packs, such as Wilsonso's shader pack,
+   cannot replace Render Everything to make these meshes display normally.
+
+Core rule: Locate -> Modify -> Re-read -> Verify in Game. Do not jump from a
+mesh name or one static parse directly to a final material edit.
+
+4. Why This Procedure Exists
+
+Asking AI to edit an MRL only from one mesh named by a person limits the AI to a
+single human static judgment. A mesh name, MatID, or one static mapping creates
+only a candidate. It does not prove which material the game draws for the
+current state, LOD, instance, or ARC provider.
+
+00_MRL TEST PERCEDURE NOW therefore puts the human and AI in one evidence loop:
+the human defines the intended effect and observes the game image; AI parses
+binary data, enumerates candidates, generates minimal edits, and re-reads the
+result. Every success or failure requires a reviewable game-verification result.
+AI is no longer merely executing a possibly wrong mesh instruction; it narrows
+the scope from facts until the target effect is reached.
+
+If future AGI gains reliable code understanding, runtime observation, and visual
+acceptance capabilities, it can execute the same evidence loop automatically:
+propose candidates, run the game, observe the result, re-check binary data, and
+iterate. Whether it has human emotions does not change this engineering rule;
+what matters is whether it can locate, modify, and verify more consistently and
+completely.

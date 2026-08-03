@@ -1,0 +1,297 @@
+Transparency plus Full Entire Emission, coexist matter
+部分 Mesh 半透明、全身自发光与共存问题
+=====================================================
+
+中文
+----
+
+本文件只记录最终已验证的 MRL 结论和关键合同。所有效果共用的“定位 -> 修改 -> 回读
+-> 游戏验证”流程见 MRL TEST PERCEDURE NOW.txt。
+
+一、部分 Mesh 半透明
+
+用途：让衣服、裙子、披风或其他独立 Mesh 半透明，而不让整个人物共享透明。
+
+1. 先按通用测试流程，用白色 Albedo 探针确认游戏中真正对应目标部位的 material。
+2. 目标 Mesh 最好拥有独立材质；多个 Mesh 共用一个 material 时，修改会同时作用于
+   所有使用者。
+3. 已验证的透明 MRL 合同为：
+
+       fTransparencyMap
+       fUVTransparencyMap
+       tTransparencyMap
+       fChannelTransparencyMap
+       CBMaterial transparency = 0.5
+
+4. 透明链必须按原生成功 MRL 的资源顺序插入，并同步资源表和常量缓冲区偏移。
+5. Specular 与透明遮罩应分开采样。已验证案例保留 boots_MM 作为 Specular，并用
+   pants_MM 作为 tTransparencyMap。
+6. 透明遮罩的所有 mip 必须一致。已验证案例将 pants_MM 的 11 个 mip 全部设为
+   BC4 数值 255，以避免近远距离或不同 UV 区域透明度不一致。
+
+该部分 Mesh 半透明路线已通过游戏验证，验证案例的主 MOD 保持逐字节不变。
+
+二、单个 Mesh 不透明自发光
+
+可以实现，且已通过游戏验证。该路线只改 MRL，不改 .mod，也不需要透明 Blend 或
+Emission Map。
+
+已验证关键规则：
+
+    femission target resource = 552983
+    femission value mode: 552983 -> femissionconstant (931339)
+    globals.f_emission_color = [4.0, 4.0, 4.0]
+    Blend / Depth / Draw Pass / Alpha Test = ordinary opaque state
+
+重点不是只提高 RGB。普通不透明材质即使存在 femission flag，且把 RGB 提高到 2、4 或
+6，只要 value mode 仍是 femission（552983），在该案例中仍不会发光。必须保留
+femission 目标资源，并将它的 value mode 改为 femissionconstant（931339）。
+
+Sherry 已验证案例保持目标 BM，按需要借用 Mesh 48 的 NM/MM；目标材质哈希
+951087380、2713264302 在普通不透明状态下获得自发光，同时保留平滑质感和正确贴图。
+
+三、全身自发光
+
+用途：让目标 MRL 的全体材质建立统一的自发光覆盖基线，再由游戏测试决定少数例外。
+
+1. AI 先解析目标 MRL 的所有 material。不要从一个 Mesh 名称猜完整状态覆盖。
+2. 先用一个已命中的 material 验证 Constant 自发光合同；验证后，对该 MRL 内全部
+   已解析 material 统一写入自发光修改。
+3. EM1000 已验证的关键语义修改为：
+
+       FEmission@1416 -> FEmissionConstant@1417
+       globals.f_emission_color: [0.5, 0.5, 0.5] -> [4.0, 4.0, 4.0]
+
+4. 全材质覆盖后，用户在游戏中检查活体、死亡、LOD、配件和不同实例。AI 再将不应
+   发光或不兼容的少数 material 恢复原始路由和常量。
+5. 修改时保留每个 material 自己的纹理路径、资源槽、动画、Blend、Depth、Draw Pass、
+   Alpha Test 和 Header；不复制别的角色整份 MRL。
+
+该流程已验证可在不修改 .mod 顶点、索引、骨骼或 Mesh Header 的情况下实现全身自发光。
+
+EM1000 案例：为什么最初怎么改都不发光，最后如何解决
+
+最初按用户提供的 Mesh_010 / MatID 48 静态映射到 material 9。即使反复测试
+EmissionConstant、EmissionMap、白色遮罩和原生材质移植，活体敌人仍不发光，看起来像
+MRL 修改完全没有生效。
+
+最终定位过程：
+
+1. 只把 material 9 的 Albedo 改为白色探针。游戏结果：活体不变、死亡变白。
+   这证明 material 9 是死亡状态分支，不是活体整模。
+2. 把所有有效 Albedo 同时改成白色。活体和死亡均完整变白，证明当前 em1000.mrl
+   的确被两个状态加载；此前失败是 material 目标错误，不是 MRL 路径错误。
+3. 根据相同顶点数 19547 收缩候选，再分别探针 material 1 和 7。两者共同覆盖活体，
+   且少数/多数敌人实例会走不同 material。
+4. 最终对活体 material 1/7 和死亡 material 9/11 各自的命令块写入
+   FEmissionConstant@1417 + [4,4,4]，保留各自动画、贴图、Header 和渲染状态。
+5. 对同名 MRL 的 ARC 提供者做隔离验证后，当前测试场景由 uEm1000.arc 单独提供即可；
+   换地图或状态时仍必须重新验证。
+
+最终解决的不是“继续调亮参数”，而是先证明哪个 material 在当前状态真的被画出来，
+再修改它自己的 MRL 合同。
+
+四、半透明与全身自发光是否可以共存
+
+可以共存，但必须把“全身覆盖基线”和“局部材质例外”分开处理。
+
+已确认的局部共存案例：Mesh 15 的 Material 19 同时半透明和自发光。原 Material 19
+本来已有透明和发光资源；成功不来自单纯新增 flag，而来自目标 material 的 Header 状态
+和常量组合。
+
+已确认成功的案例参数：
+
+       blend_state_hash:         1655886179 -> 599454053
+       depth_stencil_state_hash: 3088290198 -> 2100257176
+       cbmaterial.f_reflective_color: [0.0, 0.0, 0.0] -> [1.0, 1.0, 1.0]
+       cbmaterial.f_transparency_volume: 10.0 -> 20.0
+       globals.f_emission_color: [0.5, 0.5, 0.5] -> [6.0, 6.0, 6.0]
+       globals.f_specular_color: [0.1, 0.1, 0.1] -> [2.0, 2.0, 2.0]
+
+处理顺序：先建立全材质自发光基线；再用白色探针定位需要半透明的 material；最后把该
+material 调整为“半透明 + 自发光”的专用状态并单独游戏验证。不要把这套案例参数当作
+所有角色的固定字节偏移，也不要把自发光当作油性高光的替代品。
+
+五、历史错误：强行把普通 Mesh 伪装成头发半透明材质
+
+历史上曾使用 .mod 路线强行让普通 Mesh 获得头发半透明效果：把自己的 Mesh 改到头发
+Material ID，或把 MESH_*** 改名成头发材质名称。这不是可靠的材质迁移方法。
+
+已观察到的失败结果：
+
+1. 头发 Mesh 可能使用 FVF 的 2 权重格式，而目标 Mesh 使用 4 权重格式。强行让目标
+   Mesh 走头发材质后，游戏中虽然可能出现半透明，但蒙皮数据与 FVF/Shader 输入不匹配，
+   会导致 Mesh 撕裂、拉伸或变形。
+2. 试图强行把 FVF 改成 4 权重来消除变形后，半透明效果又可能消失。这说明问题不是
+   只靠 Mesh 名称、Material ID 或一个 FVF 数字就能解决的。
+3. 改 .mod 还会破坏原 Mesh 的几何、蒙皮和渲染格式边界，无法证明它正确继承了目标
+   MRL 的完整二进制材质合同。
+
+正确路线：保留目标 Mesh 自己的 .mod、FVF、顶点和蒙皮格式；由 AI 解析 MRL 的资源表、
+Header 状态、常量和 Mesh -> material 关系，再使用白色 Albedo 探针确认游戏实际绘制的
+material，最后只在 MRL 内构建半透明或自发光合同。
+
+AI 的优势在于可以批量解析、二进制对比和生成最小候选改动，远快于人工反复改 MatID、
+Mesh 名称或 FVF 盲试；游戏内观察仍是最终验收。
+
+
+English
+-------
+
+This file records only final, verified MRL conclusions and key contracts. The
+shared Locate -> Modify -> Re-read -> Verify in Game procedure is in
+MRL TEST PERCEDURE NOW.txt.
+
+1. Partial Mesh Transparency
+
+Purpose: make clothing, skirts, capes, or other independent meshes translucent
+without making the whole character share that transparency.
+
+1. Follow the common test procedure and use a white Albedo probe to confirm the
+   material that actually draws the target part in game.
+2. The target mesh should ideally have its own material. When multiple meshes
+   share one material, the edit affects every user of that material.
+3. Verified transparency MRL contract:
+
+       fTransparencyMap
+       fUVTransparencyMap
+       tTransparencyMap
+       fChannelTransparencyMap
+       CBMaterial transparency = 0.5
+
+4. Insert the chain in the resource order used by a verified native MRL, and
+   update the resource-table and constant-buffer offsets.
+5. Sample specular and the transparency mask separately. The verified case kept
+   boots_MM for Specular and used pants_MM for tTransparencyMap.
+6. Every mip of a transparency mask must agree. The verified case set all eleven
+   pants_MM mips to BC4 value 255, avoiding distance- and UV-dependent opacity.
+
+This partial-mesh transparency route was game-verified while the primary MOD
+remained byte-for-byte unchanged.
+
+2. Single-Mesh Opaque Emission
+
+This is possible and was game-verified. The route changes MRL only. It does
+not change the .mod and does not require a translucent Blend or an Emission Map.
+
+Verified key rule:
+
+    femission target resource = 552983
+    femission value mode: 552983 -> femissionconstant (931339)
+    globals.f_emission_color = [4.0, 4.0, 4.0]
+    Blend / Depth / Draw Pass / Alpha Test = ordinary opaque state
+
+The key is not merely raising RGB. In this case, an ordinary opaque material
+with a femission flag still did not emit when RGB was raised to 2, 4, or 6
+while the value mode remained femission (552983). Retain the femission target
+resource and change its value mode to femissionconstant (931339).
+
+The verified Sherry case retained the target BM and borrowed Mesh 48 NM/MM as
+needed. Target material hashes 951087380 and 2713264302 became emissive in an
+ordinary opaque state while retaining smooth material response and correct
+textures.
+
+3. Full Entire Emission
+
+Purpose: establish an all-material emission baseline for the target MRL, then
+let game testing identify the few exceptions.
+
+1. AI parses every material in the target MRL. Do not infer complete state
+   coverage from a single mesh name.
+2. Prove the Constant emission contract on one confirmed material first. Then
+   apply the emission edit to every parsed material in that MRL.
+3. Verified EM1000 semantic edit:
+
+       FEmission@1416 -> FEmissionConstant@1417
+       globals.f_emission_color: [0.5, 0.5, 0.5] -> [4.0, 4.0, 4.0]
+
+4. After all-material coverage, test live, death, LOD, equipment, and different
+   instances in game. Restore the original route and constant for the few
+   materials that should not emit or are not compatible.
+5. Retain each material's own texture paths, resource slots, animation, Blend,
+   Depth, Draw Pass, Alpha Test, and Header. Do not copy another character's
+   complete MRL.
+
+This workflow proved whole-model emission without changing MOD vertices,
+indices, bones, or mesh headers.
+
+EM1000 Case: Why Early Edits Never Appeared, and How It Was Solved
+
+The original static mapping of the user-provided Mesh_010 / MatID 48 led to
+material 9. Repeated EmissionConstant, EmissionMap, white-mask, and native
+material-transfer tests still produced no live-enemy emission, making it appear
+that the MRL edits had no effect.
+
+Final location process:
+
+1. Only material 9 Albedo was changed to a white probe. In game, the live enemy
+   stayed unchanged while the death state became white. Material 9 was a death
+   branch, not the live whole-model branch.
+2. Every valid Albedo was changed to white. Both live and death states became
+   fully white, proving that the current em1000.mrl was loaded in both states.
+   The earlier failure was a wrong material target, not a wrong MRL path.
+3. Candidates were narrowed using the shared vertex count of 19547, then
+   materials 1 and 7 were probed separately. Together they covered the live
+   model, and minority/majority enemy instances selected different materials.
+4. The command blocks for live materials 1/7 and death materials 9/11 were
+   individually changed to FEmissionConstant@1417 + [4,4,4], while retaining
+   their own animation, textures, Headers, and rendering states.
+5. ARC-provider isolation showed that uEm1000.arc alone supplied the result in
+   the tested scene. A different map or state must still be verified again.
+
+The solution was not to keep raising values. It was to prove which material was
+actually drawn in the current state, then edit that material's own MRL contract.
+
+4. Can Transparency and Full Entire Emission Coexist?
+
+Yes, but all-material coverage and local material exceptions must be handled
+separately.
+
+Verified local coexist case: Mesh 15, Material 19 became both translucent and
+emissive. The original material already contained transparency and emission
+resources. Success came from its Header-state and constant combination, not
+from merely adding flags.
+
+Confirmed sample parameters:
+
+       blend_state_hash:         1655886179 -> 599454053
+       depth_stencil_state_hash: 3088290198 -> 2100257176
+       cbmaterial.f_reflective_color: [0.0, 0.0, 0.0] -> [1.0, 1.0, 1.0]
+       cbmaterial.f_transparency_volume: 10.0 -> 20.0
+       globals.f_emission_color: [0.5, 0.5, 0.5] -> [6.0, 6.0, 6.0]
+       globals.f_specular_color: [0.1, 0.1, 0.1] -> [2.0, 2.0, 2.0]
+
+Order of work: establish the all-material emission baseline; use a white probe
+to locate the material that must be translucent; then turn that material into a
+dedicated translucent-plus-emissive state and validate it separately in game.
+Do not treat these sample parameters as fixed byte offsets for every character,
+and do not treat emission as a substitute for oily specular highlights.
+
+5. Historical Error: Forcing an Ordinary Mesh into a Hair Transparency Route
+
+An older .mod-based approach tried to force ordinary meshes into a hair
+transparency route by changing a mesh to the hair Material ID or renaming a
+MESH_*** node to a hair-material name. This is not a reliable material-migration
+method.
+
+Observed failure results:
+
+1. A hair mesh may use an FVF two-weight format while the target mesh uses four
+   weights. Forcing the target through the hair material can make it translucent
+   in game, but mismatched skin data and FVF/shader inputs can tear, stretch, or
+   deform the mesh.
+2. Forcing the FVF to four weights in an attempt to remove deformation can make
+   the transparency disappear. This shows that a mesh name, Material ID, or one
+   FVF number cannot solve the complete problem.
+3. Editing the .mod also risks violating the original mesh geometry, skinning,
+   and rendering-format boundary, without proving that it inherited the target
+   MRL's complete binary material contract.
+
+Correct route: retain the target mesh's own .mod, FVF, vertices, and skinning
+format. Let AI parse MRL resource tables, Header states, constants, and the
+Mesh -> material relationship; use a white Albedo probe to prove the material
+drawn by the game; then build the transparency or emission contract in MRL only.
+
+AI can batch-parse resources, compare binary contracts, and generate minimal
+candidate edits much faster than repeatedly guessing MatID, mesh names, or FVF
+changes manually. In-game observation remains the final acceptance step.

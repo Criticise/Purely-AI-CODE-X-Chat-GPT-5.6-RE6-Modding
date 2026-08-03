@@ -1,0 +1,100 @@
+Material Contract Migration Without MOD Edits
+SHERRY ASIA - SHIRT -> Mesh 48
+================================================
+
+中文
+----
+
+案例名称：SHERRY ASIA - SHIRT 材质合同迁移。
+
+结论：这个步骤读取 .mod 只为定位 Mesh 与 material hash 的关系，最终只改 MRL；不写入
+.mod，不改 MOD 材质槽、网格、顶点、骨骼或 Mesh Header，也不改 BM、NM、MM 的 TEX
+像素。
+
+迁移关系不是“把 SHIRT 网格替换成 Mesh 48”，而是：
+
+    SHERRY ASIA - SHIRT
+        保留自己的 tAlbedoMap / BM
+        使用 Mesh 48 的 tNormalMap / NM
+        使用 Mesh 48 的 tSpecularMap / MM
+        使用 Mesh 48 的完整材质命令合同
+
+    Reference: Mesh 48
+    Reference material hash: 1756614803
+    Recorded target material hashes: 2713264302, 951087380
+
+为什么这样做：
+
+1. tAlbedoMap / BM 决定可见颜色和目标贴图。保留 SHERRY ASIA - SHIRT 自己的 BM，
+   才不会丢失已修改的角色贴图。
+2. tNormalMap / NM 和 tSpecularMap / MM 决定表面微法线、高光和粗糙响应。借用
+   Mesh 48 的 NM/MM 采样链后，原有明显的粗糙布料/皮革式表面感消失，表面变得更平滑。
+3. 只复制 Mesh 48 的命令、但仍保留目标自己的 BM/NM/MM，不足以去掉粗糙感。
+4. 完整复制 Mesh 48 的全部纹理索引虽然会立即去掉粗糙感，但会连 BM 一起换掉；目标
+   UV 与 Mesh 48 贴图不匹配，导致颜色贴图错位。这只是一轮定位验证，不是最终方案。
+
+最终 MRL 规则：
+
+    target tAlbedoMap = target BM
+    target tNormalMap = Mesh 48 NM
+    target tSpecularMap = Mesh 48 MM
+    target material commands = Mesh 48 material contract
+
+关键限制：MOD 材质槽序号不等于 MRL material 数组下标。必须以 material hash 建立
+MOD Mesh -> MRL Material 映射，不能把 MOD 槽号直接当作 MRL 下标。
+
+验收结果：目标颜色贴图正常显示；原有粗糙表面感消失；只需要在对应 ARC 中替换目标
+MRL 条目。MOD、BM、NM、MM 和其他 TEX 文件保持不变。
+
+
+English
+-------
+
+Case name: SHERRY ASIA - SHIRT material-contract migration.
+
+Conclusion: this step reads the .mod only to locate the mesh-to-material-hash
+relationship. The final edit changes MRL only. It does not write the .mod,
+change MOD material slots, meshes, vertices, bones, or mesh headers, or alter
+the pixels of the BM, NM, or MM TEX files.
+
+The migration does not replace the SHIRT mesh with Mesh 48. It is:
+
+    SHERRY ASIA - SHIRT
+        keeps its own tAlbedoMap / BM
+        uses Mesh 48 tNormalMap / NM
+        uses Mesh 48 tSpecularMap / MM
+        uses the Mesh 48 complete material-command contract
+
+    Reference: Mesh 48
+    Reference material hash: 1756614803
+    Recorded target material hashes: 2713264302, 951087380
+
+Why this works:
+
+1. tAlbedoMap / BM controls visible color and the target texture. Retaining the
+   SHERRY ASIA - SHIRT BM keeps the modified character texture visible.
+2. tNormalMap / NM and tSpecularMap / MM control micro-normal, specular, and
+   roughness response. Borrowing the Mesh 48 NM/MM sampling chain removes the
+   visibly rough cloth/leather-like surface response and makes the surface
+   smoother.
+3. Copying only the Mesh 48 commands while retaining the target BM/NM/MM is not
+   enough to remove the rough surface response.
+4. Copying every Mesh 48 texture index removes roughness immediately, but also
+   replaces the BM. Because target UVs do not match the Mesh 48 textures, this
+   produces visible texture misalignment. It is a location test, not the final
+   configuration.
+
+Final MRL rule:
+
+    target tAlbedoMap = target BM
+    target tNormalMap = Mesh 48 NM
+    target tSpecularMap = Mesh 48 MM
+    target material commands = Mesh 48 material contract
+
+Key limitation: a MOD material-slot number is not an MRL material-array index.
+Build the MOD Mesh -> MRL Material mapping through the material hash; never use
+a MOD slot number directly as an MRL array index.
+
+Acceptance result: the target color texture remains visible, the original rough
+surface response disappears, and only the target MRL entry must be replaced in
+the relevant ARC. The MOD, BM, NM, MM, and other TEX files remain unchanged.

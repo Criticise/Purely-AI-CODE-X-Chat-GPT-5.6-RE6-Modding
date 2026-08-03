@@ -1,0 +1,234 @@
+OIL EFFECT RESEARCH - 局部高曝光泛白
+Oil Effect Research - Local High-Exposure Whitening
+===================================================
+
+中文
+----
+
+本文件是油性高光、局部高曝光泛白与自发光叠加的研究档案，不把未验证路线写成通用
+配方。所有材质实验仍应先执行 00_MRL TEST PERCEDURE NOW.txt。
+
+一、大前提：当前成功路径与 .mod 的关系
+
+当前已保留、并通过游戏验证的“油性基础层 + 自发光叠加层”方案会改 .mod：原始
+82-Mesh SHERRY ASIA 扩展为 86-Mesh，以新增 Mesh 83-86 承担独立自发光叠加层。
+
+这类 AI 研发出的改 .mod 文件目前可能无法被 RE6 Script CODE X Python 版导入。现阶段
+没有为它们专门改导入器：这些文件仍是持续研究中的实验产物，AI 未来可能生成更多
+Mesh、材质路由或 FVF 变体；在没有稳定、可泛化的二进制合同前，不把某一代实验 .mod
+硬编码成导入规则。
+
+这不等于“所有高光都必须改 .mod”。Mesh 48 NM/MM 材质迁移已经证明只改 MRL 可消除
+粗糙布料感、使表面更平滑；但本工程尚未得到一个可单独发布为“MRL-only 油性”的、
+经过游戏验证的最终配方。
+
+二、已验证成功：有场景光照时的油性 + 自发光分层
+
+目标 Mesh：7、9、11、13。
+
+结构：
+
+    Layer 1: 原目标 Mesh，作为油性基础层
+    Layer 2: 新增 Mesh 83-86，作为独立自发光叠加层
+
+基础油性层：
+
+    Mesh 7 material hash:  0x38B07114
+    Mesh 9/11/13 hash:     0xA1B920AE
+    保留目标 BM；使用已验证的 NM/MM 采样链和 GrayMM96
+    研究期验证参数：Reflective 1.5, Fresnel 1.5,
+                     Specular [0.3, 0.3, 0.3], Shininess 30
+
+自发光叠加层：
+
+    material hash: 0xC0DE0713
+    Blend: BSAddAlpha
+    Depth: DSZTest
+    Draw Pass: 16
+    Emission route: femissionconstant
+    Emission: [4.0, 4.0, 4.0]
+    Base reflection on overlay: disabled
+
+游戏结果：在有效场景光照下，基础层保留油性高光，独立叠加层提供自发光。将强自发光
+和油性强行放进同一个 material 会抬高整体亮度、压低明暗对比，使油性高光视觉上被
+淹没；分层是已验证的规避办法。
+
+三、已证伪或未成功的路径
+
+1. 只提高 Specular、Reflective、Fresnel 或 MM 亮度。
+   结果：只扩大已经受光的高曝光区域；暗面仍无自然油性。
+
+2. fReflectGlobalCubeMap。
+   结果：部分方案压平或削弱原油性；关卡暗区的环境立方体本身也暗，不能提供独立油膜。
+
+3. fReflectCubeMap + 静态 tx0013_CM。
+   结果：外部引用、自包含 ARC 和独立叠加层均验证过；暗面仍没有自然油性。
+
+4. 独立第三层反射壳。
+   BSBlendAlpha 会覆盖并削弱底层；BSAddAlpha 也没有让暗面生成油膜。
+
+5. fReflectSphereMap + BH_Metal_02_BM。
+   该路线将 86-Mesh 扩展到 90-Mesh，并使用 DrawPass16、fReflectSphereMap、
+   tSphereMap 和 fFresnelSchlick。游戏中亮部进一步过曝，暗面仍无油性，已判定失败，
+   不再部署。
+
+四、当前技术结论
+
+油性高光是视角、法线、粗糙度和有效场景光/环境反射共同产生的镜面响应。自发光只增加
+材质自身亮度，不能提供镜面反射所需的入射方向和能量。
+
+因此：
+
+- 单层强自发光会明显遮蔽油性高光。
+- 有场景光时，油性基础层与独立自发光层可以共存，已验证。
+- 无有效场景光时，自发光不等于油性；当前 MRL 反射 Flag 没有实现自然、随视角变化的
+  暗面油膜。
+
+五、MRL-only 油性：未来课题
+
+本工程尚未完成只改 MRL 的最终油性方案。历史上已有 MOD 作者实现过 MRL-only 油性，
+因此它不能被写成“不可能”；目前缺少的是可审计的样本、对应角色的材质合同、游戏内
+复现与最小修改证据。
+
+后续研究应从以下任一前提出发：
+
+1. 获得已验证的 MRL-only 油性样本，并对原始/修改版进行二进制差异审计。
+2. 找到在 RE6 角色 Mesh 上实测的官方反射材质合同。
+3. 逆向 RE6 Pixel Shader、原生相机与灯光提交/裁剪机制。
+4. 明确接受把高光画入 Emission 或 MatCap 的假油膜，而不再要求自然反射。
+
+六、已知缺陷：CHRIS 5-1
+
+已观察到一个尚未修复的兼容性问题：CHRIS 5-1 的某些 MOD 可能让游戏中全部 Mesh 出现
+白色/棋盘格贴图现象。当前没有可靠根因和通用修复，不能把它归因于单一 MRL 参数或
+简单 TEX 缺失，也不应把未验证修复写入导入器或发布配方。
+
+结论：该问题保留为待研究缺陷；必须以目标 MOD、实际加载 ARC/MRL、贴图路径和游戏
+画面逐项定位。
+
+
+English
+-------
+
+This file is a research record for oily specular highlights, local
+high-exposure whitening, and emission layering. It does not present unverified
+routes as general recipes. Run 00_MRL TEST PERCEDURE NOW.txt before any material
+experiment.
+
+1. Premise: relationship of the current successful route to .mod
+
+The retained, game-verified oil-base-plus-emission-overlay solution changes the
+.mod. The original 82-mesh SHERRY ASIA becomes an 86-mesh model, with new
+Meshes 83-86 providing separate additive emission overlays.
+
+These AI-developed modified .mod files may currently fail to import through the
+RE6 Script CODE X Python importer. The importer is intentionally not specialized
+for them yet: these are active research artifacts, and future AI work may create
+more mesh, material-route, or FVF variants. Until there is a stable, general
+binary contract, one experimental .mod generation must not become a hard-coded
+import rule.
+
+This does not mean every gloss result needs a .mod edit. Mesh 48 NM/MM material
+migration proved that an MRL-only change can remove a rough cloth response and
+make a surface smoother. However, this project has not yet produced a
+game-verified, final MRL-only oil recipe suitable for release.
+
+2. Verified Success: oil plus emission layering with scene light
+
+Target meshes: 7, 9, 11, and 13.
+
+Structure:
+
+    Layer 1: original target meshes as the oil base
+    Layer 2: new Meshes 83-86 as independent emission overlays
+
+Oil base:
+
+    Mesh 7 material hash:  0x38B07114
+    Mesh 9/11/13 hash:     0xA1B920AE
+    target BM retained; verified NM/MM sampling chain and GrayMM96 used
+    research-stage values: Reflective 1.5, Fresnel 1.5,
+                           Specular [0.3, 0.3, 0.3], Shininess 30
+
+Emission overlay:
+
+    material hash: 0xC0DE0713
+    Blend: BSAddAlpha
+    Depth: DSZTest
+    Draw Pass: 16
+    Emission route: femissionconstant
+    Emission: [4.0, 4.0, 4.0]
+    Base reflection on overlay: disabled
+
+Game result: with valid scene light, the base layer retains oily highlights and
+the separate overlay emits light. Forcing strong emission and oil into the same
+material raises total luminance and lowers contrast, visually burying the oily
+highlight. Layering is the verified way to avoid that result.
+
+3. Disproved or Unsuccessful Routes
+
+1. Raising Specular, Reflective, Fresnel, or MM brightness alone.
+   Result: expands already lit highlights only; unlit areas remain without
+   natural oil.
+
+2. fReflectGlobalCubeMap.
+   Result: some variants flattened or weakened the original oil; a dark level
+   environment cube cannot supply an independent oily response.
+
+3. fReflectCubeMap plus static tx0013_CM.
+   Result: external reference, self-contained ARC, and independent overlay
+   variants were tested; unlit areas still had no natural oil.
+
+4. An independent third reflection shell.
+   BSBlendAlpha covered and weakened the base; BSAddAlpha also did not create
+   an oily response in unlit areas.
+
+5. fReflectSphereMap plus BH_Metal_02_BM.
+   This route expanded 86 meshes to 90 and used DrawPass16,
+   fReflectSphereMap, tSphereMap, and fFresnelSchlick. Lit areas became more
+   overexposed while unlit areas still had no oil. It is a failed route and is
+   no longer deployed.
+
+4. Current Technical Conclusion
+
+An oily highlight is a specular response produced by view direction, normals,
+roughness, and valid scene-light or environmental-reflection input. Emission
+adds material brightness; it does not provide the incoming direction or energy
+needed for specular reflection.
+
+Therefore:
+
+- Strong single-layer emission visibly masks oily specular highlights.
+- With scene light, an oil base and a separate emission layer can coexist; this
+  has been verified.
+- Without valid scene light, emission is not oil. Current MRL reflection flags
+  have not produced a natural, view-dependent oily response in unlit areas.
+
+5. MRL-only Oil: Future Research
+
+This project has not completed a final MRL-only oil solution. Historical MOD
+authors have produced MRL-only oily results, so it must not be described as
+impossible. What is missing here is an auditable sample, the target character's
+material contract, in-game reproduction, and minimal-change evidence.
+
+Future work should begin from at least one of these conditions:
+
+1. Obtain a verified MRL-only oil sample and binary-diff the original and
+   modified versions.
+2. Find an official reflection-material contract proven on an RE6 character
+   mesh.
+3. Reverse-engineer the RE6 pixel shader plus native-camera and lighting
+   submission/culling behavior.
+4. Explicitly accept a fake oil effect painted into Emission or MatCap instead
+   of requiring natural reflection.
+
+6. Known Defect: CHRIS 5-1
+
+An unrepaired compatibility issue has been observed: some CHRIS 5-1 MODs can
+make every in-game mesh show a white/checkerboard texture result. There is no
+reliable root cause or general repair yet. It must not be attributed to a single
+MRL parameter or simple missing TEX file, and an unverified repair must not be
+added to the importer or published as a recipe.
+
+Conclusion: retain this as an open defect. Locate it case by case through the
+target MOD, actual loaded ARC/MRL, texture paths, and game image.
