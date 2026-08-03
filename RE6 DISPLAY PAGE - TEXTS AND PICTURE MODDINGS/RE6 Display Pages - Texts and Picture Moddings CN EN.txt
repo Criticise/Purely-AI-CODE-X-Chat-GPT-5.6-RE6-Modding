@@ -1,0 +1,348 @@
+RE6 DISPLAY PAGE - TEXTS AND PICTURE MODDINGS
+Operation Guide / 操作手册
+============================================================
+
+中文
+====
+
+一、范围与原则
+
+本手册只说明 RE6 的记录界面、菜单显示页、加载前循环 TIPS 的图片与短文本如何定位、
+修改、回读和验证。只写操作方法，不引用具体案例、项目名、人物名、地图名或成品名。
+
+图片、文字、背景和等待提示可能来自不同的 ARC 或散装资源。看到它们同时出现在一个
+页面，不代表它们必须在同一个文件里。先获得运行时证据，再解包候选资源；不能只看
+文件名中含有 `load`、`tips`、语言后缀或其他相似字样就开始修改。
+
+所有改动都应在独立工作目录完成：保留原文件、记录文件名/大小/SHA-256、单变量修改、
+回包、从最终 ARC 再次解包、最后在游戏中验证。临时目录里的 PNG、DDS、XML 或 TXT
+不是最终依据；最终 ARC 内真实存在的条目和游戏画面才是依据。
+
+二、记录界面和菜单图片替换
+
+1. 从原 ARC 复制目标文件到工作目录，原版不覆盖。
+2. 解包后列出并预览图片图集。记录界面通常位于 Record.arc 内的
+   `recordspicXX_BM_NOMIP` 一类资源，但必须通过预览确认实际图集和实际矩形区域。
+3. 先从原 TEX 导出 DDS/PNG 预览，绝不先覆盖原图。
+4. 人类在截图或图集预览上画红框、边线，或给出 X/Y/W/H 像素值。人类只负责指出
+   真正边界；Code X 根据这些证据执行裁切、缩放、对齐、调色、图层合成和回填。
+5. 新图只覆盖已经确认的区域，保留相邻图块、黑边、UI 留白、遮罩和未选区域。
+6. 图片可由生成工具制作，例如使用豆包得到具有合法使用权的干净导出图。若输入带有
+   服务标记或归属标记，应从原生成服务取得符合规则的干净输出，不把清除标记作为
+   RE6 资源转换步骤。
+7. 从 DDS 回写 TEX 时，严格匹配原 TEX 的版本、类型、宽高、Mip 数、压缩格式和像素
+   布局。任意 DDS 不是自动可用的 RE6 TEX；必须以原 TEX 或解析 TXT 作为转换参考。
+8. 回包后立即重新解包最终 ARC，比较目标 TEX/DDS 的元数据、目标图像区域和无关区域。
+
+三、AI 图像处理的边界与人类协作
+
+AI 可以识别图片、生成候选、做传统图像处理和批量转换，但游戏截图中的前景与背景常常
+共享亮度、颜色或纹理。自动抠图可能在“带入背景残留”和“吃掉主体细节”之间反复摇摆，
+不能把第一次自动结果当作最终美术答案。
+
+最可靠的分工是：人类截图、红框、画线或指出缺口高度；Code X 读取这些标记，计算精确
+坐标，完成裁切、缩放、图层操作、DDS/TEX 转换、ARC 回包和校验。人类不需要会 PS，
+但应为边界判断提供最小视觉证据。遇到缝隙、黑边被覆盖、相邻图块受损或主体被裁掉时，
+不要继续盲目自动生成；先重新标出正确边界，再做确定性修补。
+
+四、记录界面和菜单短文本替换
+
+1. 先通过实际游戏加载或运行时文件访问确认真正被读取的 `Msg_*.arc`。ARC 文件名的
+   语言后缀不保证等于当前界面的有效语言槽。
+2. 解包目标 Msg ARC，读取 GMD 字符串表，先生成只读索引，再定位要修改的短文本。
+3. 不要重建、排序或重编号整个字符串表。共享偏移、空条目和非单调偏移都可能存在。
+4. 优先在原字符串槽中覆盖能放下的短文本。若必须追加字符串，只改变已经验证过的单个
+   偏移表项，并回读确认这个特定 UI 字段确实能从新位置显示。
+5. 编码、零终止符和换行规则必须从该 GMD 的原条目读取。不能假设每个 UI 字段都支持
+   相同的追加偏移或相同的换行字节；不能直接写文本形式的 `\\n` 当作换行。
+6. 完全退出游戏进程后再启动，分别检查记录页、菜单页和滚动状态中的长度、截断、
+   空白、换行和可见性。
+
+小记：本地 RE6 汉化补丁的实际语言槽是 `Msg_eng.arc`，不是中文 ARC。这个结论来自
+对实际加载文件的解包和读取确认；因此修改显示文字前必须先确认运行时 ARC，不能根据
+`chS`、`chT` 或 `eng` 这类文件名后缀猜测。该结论只描述已测试的本地汉化补丁，不应
+直接推广到所有 RE6 版本。
+
+五、英文与中文字体边界
+
+英文短文本通常可复用现有 26 个基础拉丁字母，因此风险较低。中文不是“写入 UTF-8
+就会自动出现”：目标字形必须同时存在于实际使用的字体表和字体图集中。
+
+如果当前字体没有某个中文字符，不应承诺 Code X 能在普通文字修改中可靠创造新字。把
+未使用旧字替换成新字，仍可能因字体表、压缩图集、笔画边缘或缓存留下残笔、缺笔或
+错误字形；已有实测表明这种替换可能无法修好。
+
+优先顺序应是：
+
+1. 使用当前字体已经支持的中文字符。
+2. 使用短英文或其他已验证可显示的文本。
+3. 把更多说明放进图片，不强行修改字体。
+4. 只有在字体表、图集格式和游戏加载路径都已单独验证时，才把字体修改作为独立工作。
+
+六、加载前循环 TIPS 图片与文字：定位原则
+
+加载前的 TIPS 图片常见于 `nativePC\etc\loadbg` 或 ARC 内对应图片条目；文字常见于
+实际被加载的 Msg/GMD 条目。它们必须分别定位。下面两种方法用于缩小候选范围。
+
+方法 A：Ultimate Trainer 的 Missing Files Fix
+
+1. 先备份原资源，在单独测试覆盖目录中实验；不要直接删除唯一原版文件。
+2. 开启 Missing Files Fix 后，缺失资源不一定会立即使游戏退出，加载过程可能停住或
+   循环保持在加载画面。这提供观察时间，但不是最终运行环境的替代品。
+3. 每次只隔离一个明确候选或很小的一组候选，进入同一可复现加载流程，记录画面、时间
+   和变化。
+4. 加载保持时，测试目录中文件被游戏占用的提示可以当作线索，但不能单独证明该文件
+   就是目标图片或目标文字。
+5. 立即恢复候选资源，再做下一个单变量测试。多个文件一起变化时，结果没有定位价值。
+
+方法 B：Process Monitor 运行时访问日志
+
+1. 使用官方 Sysinternals Process Monitor，以管理员权限启动。
+2. 清空旧事件，按游戏可执行文件和游戏/nativePC 资源路径添加过滤条件；优先关注
+   `CreateFile`、`ReadFile`、`QueryOpen` 等文件访问。
+3. 在进入地图前开始捕获；目标 TIPS 显示后停止捕获。
+4. 导出 PML 与 CSV/文本日志，保留原始日志，不只保存截图。
+5. Code X 依据时间轴筛选 ARC、TEX、GMD、loadbg 与相关散装资源，建立
+   “路径 -> ARC 条目 -> 预览图/字符串”的对照；人类再确认屏幕中的实际位置。
+6. 再抓取一次不触发相同 TIPS 的对照流程，排除常驻文件和无关预读。
+
+Process Monitor 记录的是文件访问，不会自动说明“哪个文件对应哪一个屏幕像素”。它用于
+缩小范围，截图、预览与单变量回写仍然是最终定位证据。
+
+部分 Windows 版本可能让 Process Monitor 驱动与 Windows Defender 的“内核隔离”出现
+兼容性报错。先更新 Windows、重启并使用最新官方版本重试；本地曾出现的问题后来随
+系统更新恢复。不要把关闭内核隔离当作常规工作流。只有用户理解本机安全影响、确有
+必要做一次短时诊断时，才考虑临时变更，并在测试后立即恢复原安全设置。
+
+不要给所有场景贴图打标记来定位一张 TIPS 图。这样会让大量贴图同时出现标记，制造
+干扰，而不是给出可靠路径。运行时访问日志加精确预览更有效。
+
+七、加载 TIPS 图片替换
+
+1. 根据定位结果，把目标资源及其原 TEX/转换参考复制到工作目录。
+2. 导出 PNG/DDS 预览，确认图片完整边界，特别检查黑边、遮罩、相邻图块和固定 UI 区域。
+3. 人类可以提供红框、边线、缺口高度或 X/Y/W/H。Code X 将这些信息转为确定性裁切、
+   缩放和图层操作。
+4. 复杂截图中，AI 的边缘与背景分离可能不稳定。背景更干净、对比度更高的源图，或明确
+   的人工边界，通常比反复自动抠图可靠。
+5. 按原参考恢复 DDS/TEX：版本、类型、宽高、Mip、压缩格式和像素布局都必须一致。
+6. 只替换确认区域。回包后再解包目标条目，比较元数据、尺寸和未修改区域。
+7. 完全退出游戏、重新进入同一加载流程，检查循环显示、裁切、色块、黑边和切换状态。
+
+八、加载 TIPS 文本替换
+
+1. 先确认实际加载的 Msg ARC 与 GMD，不要凭语言文件名猜测。
+2. 为目标 GMD 生成只读字符串索引，定位标题/正文条目及其原始偏移。
+3. 保持原字符串表结构。优先原位写入短文本；只有逐字段验证安全时才追加字符串和
+   重定向偏移。
+4. TIPS 标题和正文可能使用不同渲染字段。一个字段能显示换行，不代表另一个也能；
+   使用该字段已经验证的真实字节序列，不能写字面量 `\\n`。
+5. 长文本先做短句版。正文区域狭窄或不支持新偏移时，应缩短文字，或把补充说明放到
+   图片，而不是强行扩大字符串表。
+6. 中文显示仍受实际字体表和字体图集限制；英文或已验证字符集通常更容易稳定显示。
+
+九、统一验收与回退
+
+1. 从最终输出 ARC 或散装目录再次读取目标资源，确认路径、尺寸、格式、偏移和字节。
+2. 保留原文件与每次单变量测试的备份，任何失败都能立即回退。
+3. 完全重启游戏后，在相同页面或相同进图流程中验证，不能只看主菜单或临时预览。
+4. 若出现白图、黑图、停滞、空白文字、残笔、错误裁切或异常换行，先回退到上一份
+   已验证文件，再缩小到一个图片区域或一个 GMD 条目继续测试。
+5. 只有最终 ARC 能重新解包、目标条目仍可解析、无关区域未损坏，并且游戏实际显示正确，
+   才可交付。
+
+English
+-------
+
+1. Scope and Rules
+
+This guide explains how to locate, edit, read back, and verify images and short
+text in RE6 record screens, menu display pages, and loading-time looping Tips.
+It contains operating method only, with no specific case, project, person,
+stage, or finished-package name.
+
+Images, text, backgrounds, and wait prompts can come from different ARCs or
+loose resources. Their presence on one screen does not prove they are stored in
+one file. Collect runtime evidence first, then extract candidates. Do not edit
+a resource merely because its filename contains `load`, `tips`, a language
+suffix, or another similar word.
+
+Perform every edit in an isolated workspace: retain the original file, record
+filename/size/SHA-256, change one variable, rebuild, extract the final ARC
+again, and validate in game. Temporary PNG, DDS, XML, or TXT files are not the
+final evidence. The real final ARC entries and the game image are.
+
+2. Record-Screen and Menu Image Replacement
+
+1. Copy the target ARC into the workspace and leave the original untouched.
+2. Extract, list, and preview its image atlases. Record displays often use
+   resources such as `recordspicXX_BM_NOMIP` inside Record.arc, but previewing
+   must prove the actual atlas and rectangle.
+3. Export a DDS/PNG preview from the original TEX before overwriting it.
+4. The human marks the true region on a screenshot or atlas preview using a red
+   rectangle, guide line, or X/Y/W/H values. Code X uses this evidence for
+   deterministic crop, scale, alignment, color adjustment, composition, and
+   insertion.
+5. Replace only the confirmed region. Preserve neighboring tiles, black borders,
+   UI padding, masks, and every unselected area.
+6. An image-generation tool may supply an input image, for example a clean,
+   authorized export from Doubao. Obtain clean output under the source service's
+   rules rather than treating service or attribution marks as data to remove in
+   the RE6 conversion step.
+7. When writing DDS back to TEX, match the original TEX version, type,
+   dimensions, mip count, compression, and pixel layout. An arbitrary DDS is
+   not automatically a writable RE6 TEX; use the original TEX or its parsed TXT
+   as the conversion reference.
+8. Rebuild and immediately extract the final ARC again. Compare target TEX/DDS
+   metadata, the edited image region, and every unrelated area.
+
+3. AI Image Editing Limits and Human Collaboration
+
+AI can inspect images, produce candidates, make conventional image edits, and
+batch-convert files. In game screenshots, foreground and background commonly
+share brightness, color, or texture. Automatic cutouts can then oscillate
+between background residue and missing subject detail. One automatic result is
+not final art direction.
+
+The reliable split is: the human supplies a screenshot, red box, line, or
+measured missing strip; Code X turns that evidence into exact coordinates and
+performs crop, scale, layer operations, DDS/TEX conversion, ARC rebuild, and
+verification. Photoshop skills are not required, but minimal visual evidence
+is required for boundary decisions. If an edge, black border, neighboring tile,
+or subject crop is wrong, mark the boundary again before making a deterministic
+correction rather than blindly generating more candidates.
+
+4. Record-Screen and Menu Short Text
+
+1. Confirm the `Msg_*.arc` actually loaded by the game through runtime evidence.
+   A language suffix does not guarantee the active UI language slot.
+2. Extract the target Msg ARC, read its GMD string table, create a read-only
+   index, then locate the intended short-text entry.
+3. Do not rebuild, sort, or renumber the full string table. Shared offsets,
+   empty entries, and non-monotonic offsets may exist.
+4. Prefer short in-place text when it fits. If appending is required, change
+   only one verified offset-table entry and prove through read-back that this
+   exact UI field accepts the new location.
+5. Derive encoding, null termination, and line-break rules from original GMD
+   entries. UI fields may not accept the same appended offset or newline bytes;
+   a literal `\\n` is not a valid newline.
+6. Fully exit and relaunch the game, then check length, clipping, blank output,
+   wrapping, and visibility in record, menu, and scrolling states.
+
+Note: the local RE6 Chinese-language patch tested here actually loads
+`Msg_eng.arc`, not a Chinese-language ARC. This was confirmed by extracting
+and reading the file used at runtime. Confirm the active ARC before editing
+display text; do not infer it from `chS`, `chT`, or `eng` filename suffixes.
+This observation applies only to the tested local patch and must not be treated
+as a rule for every RE6 build.
+
+5. English and Chinese Font Limits
+
+English short text can usually reuse the existing 26 basic Latin letters, so it
+has lower risk. Chinese does not become visible merely because UTF-8 was
+written: the glyph must exist in both the active font table and its font atlas.
+
+If a required Chinese glyph is absent, do not promise that Code X can create a
+reliable new one during ordinary text editing. Replacing an unused old glyph can
+still leave fragments, missing strokes, or a wrong shape because of font tables,
+compressed atlases, edge data, or cache. Testing has shown that this shortcut
+may not be repairable.
+
+Use this order instead: an existing supported Chinese glyph; short English or
+other verified text; image-side explanatory text; then a separately validated
+font-table/atlas task only after the font format and game load path are proven.
+
+6. Loading-Time Tips Images and Text: Localization Rules
+
+Loading Tips images may live under `nativePC\etc\loadbg` or in corresponding
+ARC image entries; their text commonly lives in the actually loaded Msg/GMD
+entries. Locate them separately. The following two methods narrow candidates.
+
+Method A: Ultimate Trainer Missing Files Fix
+
+1. Back up original resources and use an isolated test override directory. Do
+   not delete the only original file.
+2. With Missing Files Fix enabled, a missing resource may leave or loop the
+   loading display rather than ending the game immediately. It creates an
+   observation window but is not a substitute for a valid final resource chain.
+3. Isolate one clear candidate or a very small candidate set, enter the same
+   reproducible load path, and record screen, time, and change.
+4. An in-use/file-lock notice for a file in the test directory is a clue only;
+   it cannot alone prove that the file is the target image or text.
+5. Restore the candidate immediately before the next single-variable test.
+
+Method B: Process Monitor Runtime Access Logs
+
+1. Run the official Sysinternals Process Monitor as administrator.
+2. Clear old events and filter on the game executable plus game/nativePC resource
+   paths. Prioritize `CreateFile`, `ReadFile`, `QueryOpen`, and related access.
+3. Start capture before map entry and stop after the target Tips display appears.
+4. Export PML plus CSV/text logs and retain raw logs, not screenshots alone.
+5. Code X filters the timeline for ARC, TEX, GMD, loadbg, and relevant loose
+   resources, building a `path -> ARC entry -> preview/string` comparison for
+   human confirmation of the on-screen location.
+6. Capture a control flow that does not show the same Tips item to remove
+   persistent files and unrelated preloads.
+
+Process Monitor records file access, not which file becomes which screen pixel.
+It narrows candidates; screenshots, previews, and single-variable write-back
+are still the proof.
+
+Some Windows builds can show a Process Monitor driver compatibility error with
+Windows Defender Core Isolation. Update Windows, reboot, and retry the latest
+official version first; a prior local issue recovered through system updates.
+Do not treat disabling Core Isolation as normal workflow. Consider only a short,
+informed local diagnostic change when truly necessary, then restore the security
+setting immediately afterward.
+
+Do not mark every scene texture to locate one Tips image. That places marks on
+many textures and produces noise, not a reliable source path. Runtime access
+logs plus exact previews are more effective.
+
+7. Loading Tips Image Replacement
+
+1. Copy the target resource and original TEX/conversion reference into the work
+   directory from the localization result.
+2. Export a PNG/DDS preview and identify the full boundary, including black
+   borders, masks, neighboring tiles, and fixed UI areas.
+3. A human may provide a red box, guide line, missing-strip height, or X/Y/W/H
+   values. Code X turns it into deterministic crop, scale, and layer operations.
+4. In complex screenshots, AI edge/background separation can be unreliable. A
+   cleaner high-contrast source image or explicit human marks is more reliable
+   than repeated automatic cutouts.
+5. Rebuild DDS/TEX from the original reference: version, type, dimensions,
+   mips, compression, and pixel layout must match.
+6. Replace only the confirmed region, extract again after rebuilding, and compare
+   metadata, dimensions, and all unmodified regions.
+7. Exit the game fully, repeat the same load path, and inspect looping, crop,
+   color blocks, black borders, and transition state.
+
+8. Loading Tips Text Replacement
+
+1. Confirm the active Msg ARC and GMD rather than guessing from a language name.
+2. Create a read-only GMD index and identify title/body entries with original
+   offsets.
+3. Preserve the original string-table structure. Prefer short in-place text;
+   append and redirect offsets only after field-by-field proof.
+4. Tips titles and bodies can use different render fields. A newline in one
+   field does not prove it works in another. Use the real byte sequence verified
+   for that field, never a literal `\\n`.
+5. Begin with short copy. When the body area is narrow or rejects a new offset,
+   shorten it or put supplementary information in the image rather than force a
+   large string-table modification.
+6. Chinese remains limited by the active font table and atlas. English or a
+   verified character set is generally easier to render reliably.
+
+9. Unified Acceptance and Rollback
+
+1. Read target resources again from the final output ARC or loose directory and
+   confirm path, dimensions, format, offsets, and bytes.
+2. Keep original files and a backup for every single-variable test so any failure
+   can be reverted immediately.
+3. Restart the game fully and validate through the same display or map-entry
+   flow, not only in a menu or temporary preview.
+4. For a white/black image, hang, blank text, glyph fragments, wrong crop, or
+   bad wrapping, restore the last verified file first, then narrow the next test
+   to one image region or one GMD entry.
+5. The work is deliverable only after the final ARC extracts again, target entries
+   still parse, unrelated regions remain intact, and the game displays correctly.

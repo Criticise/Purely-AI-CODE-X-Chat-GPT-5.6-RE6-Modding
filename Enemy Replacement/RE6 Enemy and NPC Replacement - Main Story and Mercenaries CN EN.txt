@@ -1,0 +1,324 @@
+RE6 Enemy and NPC Replacement
+Main Story + Mercenaries / 主线 + 佣兵模式
+Evidence-Based Test Summary / 实测结论汇总
+============================================================
+
+中文
+====
+
+一、先读：为什么本项目不再把当前 ARCTOOL 当作 RE6 的可信回包器
+
+本项目实测的当前版本 ARCTOOL，在把旧版本 TXT 与原有文件夹重新打包时，可能产生
+条目布局或偏移错误，最终 ARC 会让 RE6 无法正确读取。主线关卡尤其危险：带有 XFS
+命令的文件可能根本没有被完整解压，工具会报错，或者磁盘上的可读文件看似存在而回包
+后的真实二进制并不正确。
+
+ARCTOOL 本身是 EXE，无法可靠审计或修复其内部回包逻辑。因此 Code X 创建了
+RE6-GUI-ARC-TOOL-by-CODEX-GPT-5.6-Sol-Terra，目标是为 RE6 提供可检查的 ARC
+解包、解析、回写和回读校验流程，试图修复 ARCTOOL 在 RE6 Modding 上暴露出的这些
+缺陷。它不是“任何 ARC 都保证可改”的承诺；它要求每个成品 ARC 都重新解包，并核验
+包内真实文件、路径、条目顺序和目标字节。
+
+对于敌人、NPC 和主线地图，不要以“ARCTOOL 没报错”或“磁盘 XML/TXT 改了”作为
+成功依据。只有游戏实际加载，并且回包 ARC 的目标 LOT/XFS 字节已经重新读回核对，
+才算该一步成立。
+
+二、对象分类：先分清替换的是生成槽位，还是角色资源
+
+1. 敌人生成槽位通常在地图 Soft.arc 的 .lot XFS 文件中。已验证的敌人槽位包含成对字段：
+   mInfoClass -> cSetInfoEmXXXX
+   mUnitClass -> uEmXXXX
+
+2. 固定长度的敌人编号可同时替换这两个字段，例如：
+   cSetInfoEm1000 -> cSetInfoEm4700
+   uEm1000        -> uEm4700
+   因为字符串长度不变，不需要重建 XFS 字符串池或偏移，能保留原地图的生成位置、
+   数量、FSM 联动和其他槽位参数。
+
+3. NPC、人质、uSM 实例和玩家不是“换一个字符串就能通用”的同一类对象。它们可能使用
+   cSetInfoInsModel、mpInfo、RTTI/字段布局、专用初始化和动画容器。不能把敌人替换
+   的成功规则直接套到所有 NPC 或 USM 对象上。
+
+4. 不要混合角色 ARC 来赌运气。地图 XFS/FSM 负责场景身份和行为编排；实体类型和角色
+   ARC 负责模型、骨骼、动作、材质、贴图、声音等资源链。两层可以协作，但不是随意
+   拼接就会兼容。
+
+三、已经成功的主线敌人和 NPC 替换
+
+主线地图的定位方式：先在 Fluffy Mod Manager 中确认主线章节的英文地图名和对应的
+地图 ARC 包名，然后只处理该地图自己的 sXXXXSoft.arc。例如本项目的有效主线样本为
+s0600Soft.arc 与 s0503Soft.arc。不要因为文件名相似就改到别的 Soft.arc。
+
+A. S0600 主线敌人替换
+
+1. 敌人生成数据位于：
+   soft/stage/s0600/s0600_em00.lot 至 s0600_em05.lot
+
+2. 已验证工作流是：自己解 ARC -> 导出/读取原始 LOT -> 固定长度替换成对的
+   cSetInfoEmXXXX 与 uEmXXXX -> 自己重打包 -> 重新解包逐项校验。
+
+3. 在该样本中，em01 至 em05 的多个槽位已替换为 Em4700/4701/4710/4720，目标实体
+   可以按原生成位置与数量出现。
+
+4. 重要流程边界：em00 等开场、check/set 或门禁相关槽位可能参与关卡推进。一次性替换
+   所有敌人会造成敌人死亡不计数、门不开或流程卡住。该案例验证的第一条恢复策略是先
+   恢复 em00 的原版敌人，再逐步恢复 em01、em02 的流程相关前段槽位。
+
+B. S0503 主线 NPC/人质替换
+
+已实机成功把三个 UN 人质类型改为 Em4700：
+
+1. Em5320（6 楼女性 UN Hostage）：1 个槽位。
+2. Em5330（1 楼女性 UN Hostage）：3 个条件槽位。
+3. Em5340（7 楼男性 UN Hostage）：2 个槽位。
+
+总计 6 个槽位、4 个 LOT。游戏能进入 S0503；Em4700 模型和材质可见，并且在原人质
+槽位中完整执行人质行为和动作。该结果证明：在该类 LOT 槽位中，实体类型可以改为
+uEm4700，同时保留原人质的关卡行为编排。
+
+这不等于所有敌人/NPC/玩家实体都能互换。Em4700 的 AI、攻击、碰撞、声音、死亡逻辑、
+检查点、过场及章节切换在这个样本中没有全部完成验证，不能扩写成通用结论。
+
+四、佣兵模式（MERC）敌人替换
+
+佣兵地图同样应当处理“地图名 + Soft.arc”。屋顶任务的样本是 s1207Soft.arc；其敌人
+生成条目在 s1207_em*.lot，配套流程控制位于 EmSet1207.fsm、SecretEnemy_Pop.fsm、
+Attack_Control_*.fsm、Em_BossPop_*.fsm 等文件。
+
+MERC 的正确思路不是只看敌人编号，而是：
+
+1. 从佣兵地图名称定位到其真实的 sXXXXSoft.arc。
+2. 仅修改需要替换的 sXXXX_em*.lot 槽位。
+3. 保留该地图自己的刷新、计分、攻击控制、Boss、隐藏敌人与流程 FSM。
+4. 重打包后重新读取 ARC，确认每个目标 LOT 的字节已经写入，未修改条目不变。
+5. 进入佣兵地图检查实体出现、击杀、计分、刷新波次和 Boss/隐藏敌人流程。
+
+地图名、Soft.arc、LOT 和 FSM 必须是一套。把主线的 LOT 或角色 ARC 直接塞给佣兵地图，
+不会构成可靠的敌人替换方案。
+
+五、USM5919 失败案例：同家族也不能直接替换
+
+S0872 的 uSm5919 是本项目最明确的反例。以下三条都已经实机进入相关地图即闪退：
+
+1. 仅把 4 个 sm5919 对象的 mUnitClass 从 uSM 改为 uEm5330。
+2. 仅把 mUnitClass 从 uSM 改为同一张 LOT 里官方实际使用的 uSm9010。
+3. 把 mUnitClass 改为 uPl，并把 mpInfo.mName 改为 pl05SherryAsia。
+
+结论：USM 系列不是“同家族就能互换”的通用类。即使目标 uSm9010 已在同一 LOT 中被
+官方使用，也不能只改 uSm5919 这组对象的 mUnitClass。cSetInfoInsModel/mpInfo 结构
+要求精确配套的 SetInfo 类型、RTTI/字段布局和初始化数据；要替换为敌人或玩家，必须
+整体移植对应体系，而不是只改类名字符串。
+
+六、把其他 MOD/MRL/TEX 伪装成 USM5919 的实测结果
+
+本项目还测试过把 uEm4700 的 MOD、MRL 和 23 张引用 TEX 移入 uSm5919 ARC 容器，
+并保留 uSm5919 的 hit、NPC 逻辑、碰撞和 SOUND/SPC/SRQ/MSE/BASE。
+
+1. 删除不兼容的旧 sm5919.bmt 后，uEm4700 的完整 Mesh 可以显示。这只证明旧 BMT 与
+   移入 MOD 的网格结构不匹配，删除后解除了一层显示限制。
+
+2. 该路线仍然不稳定。uEm4700 MOD 有 83 根骨骼，原生 uSm5919 NPC 动画容器只有
+   27 根骨骼。部分动画期间会闪烁，靠近并触发其他动作时整套用户 MOD Mesh 有时消失。
+
+3. 扩大 MOD 全局 Bounds、清空 OtherMesh 面数据、套用原生 sm5919 的 LOD 参数都已经
+   实测无效；它们不能修复骨骼映射和权重/局部变换不兼容。
+
+最终结论：不要把“用别的 MOD + MRL + 贴图伪装成 USM5919”当作可发布方案。直接以
+原生 uSm5919.mod 的 27 骨骼为模板，在 3D 软件中重新绑定目标网格、转移并检查 Skin
+权重，再导出适配的 sm5919.mod，远比继续投机式资源移植稳定。ARC 工具应负责最后的
+MRL、TEX 和 ARC 回包，而不是替代骨骼重绑定。
+
+七、Ultimate Trainer 的两个重要开关
+
+测试敌人、NPC、MRL 和角色资源时，必须区分“资源链真的错了”和“游戏没有把 Mesh
+正常画出来”。以下两个开关在本项目中很重要：
+
+1. Missing Files Fix：缺资源测试时可避免游戏立刻因资源缺失中断，让人能继续观察并
+   定位缺失资源或路径问题。它是诊断辅助，不证明最终资源链已经正确。
+
+2. Render Everything：EM1000 敌人修改已经验证，这个开关会影响相关 Mesh 是否可见。
+   普通 Shader 包，例如 Wilsonso's shader pack，不能替代 Render Everything 来让这类
+   Mesh 正常显示。
+
+因此，出现“目标 Mesh 隐身”时，先检查 MRL/资源合同是否被破坏，再确认
+Render Everything 是否开启；不要把显示开关问题误判为 XFS/LOT/ARC 替换失败。
+
+八、推荐的统一工作流
+
+1. 用 Fluffy Mod Manager 定位主线或佣兵地图英文名和准确的 sXXXXSoft.arc。
+2. 为原 ARC 备份并记录哈希；不要覆盖原版 nativePC 文件。
+3. 用 Code X 的 RE6 专用流程解包，保留原始条目顺序和路径。
+4. 敌人只改经验证的 LOT 成对字段；NPC/USM 先确认对象结构，不要只替换类名。
+5. 回包后立即重新解包，逐条核验目标 LOT/XFS、路径、条目数、条目顺序和字节。
+6. 用 Ultimate Trainer 的 Missing Files Fix 与 Render Everything 排除可见性和缺资源
+   干扰，再进游戏测试。
+7. 主线重点验证门禁、检查点和过场；佣兵重点验证刷新、计分、波次、Boss 和隐藏敌人。
+8. 只有地图加载、实体完整、流程稳定时，才能称为可用的敌人/NPC 替换。
+
+English
+-------
+
+1. Read First: Why This Project Does Not Treat the Current ARCTOOL as a
+   Trusted RE6 Repacker
+
+The current ARCTOOL version tested by this project can produce entry-layout or
+offset errors when it repacks an old TXT manifest together with its original
+folder. The resulting ARC may no longer be read correctly by RE6. Main-story
+stages are especially risky: XFS-command files may fail to extract completely,
+the tool may report an error, or a readable disk file may look valid while the
+real binary written back into the ARC is wrong.
+
+ARCTOOL is an EXE, so its internal repacking behavior cannot be reliably
+audited or repaired here. Code X therefore created
+RE6-GUI-ARC-TOOL-by-CODEX-GPT-5.6-Sol-Terra. Its goal is an inspectable RE6
+workflow for ARC extraction, parsing, write-back, and read-back verification,
+to address the RE6 modding gaps exposed by ARCTOOL. This is not a promise that
+every ARC is universally editable. Every finished ARC must be extracted again
+and checked for its actual files, paths, entry order, and target bytes.
+
+For enemy, NPC, and main-story stages, "ARCTOOL did not error" or "the disk
+XML/TXT changed" is not proof of success. The game must load the result, and
+the target LOT/XFS bytes inside the rebuilt ARC must be read back and compared.
+
+2. Classify the Target Before Replacing It
+
+1. Enemy spawn slots normally live in .lot XFS files inside a stage Soft.arc.
+   Verified enemy slots contain a pair of fields:
+   mInfoClass -> cSetInfoEmXXXX
+   mUnitClass -> uEmXXXX
+
+2. When the enemy number has a fixed length, both fields can be changed
+   together, for example cSetInfoEm1000 -> cSetInfoEm4700 and
+   uEm1000 -> uEm4700. No XFS string-pool or offset rebuild is needed, so the
+   original map positions, counts, FSM links, and other slot parameters remain.
+
+3. NPCs, hostages, uSM instances, and player objects are not one generic class
+   that can be exchanged by changing one string. They may use cSetInfoInsModel,
+   mpInfo, RTTI/field layouts, specialized initialization, and animation
+   containers. Do not apply the successful enemy-slot rule directly to them.
+
+4. Do not mix character ARCs blindly. Map XFS/FSM data controls scene identity
+   and behavior choreography; an entity type and character ARC control models,
+   skeletons, animations, materials, textures, sounds, and other resource
+   chains. The two layers can cooperate, but they are not automatically
+   interchangeable.
+
+3. Verified Main-Story Enemy and NPC Replacements
+
+Locate the stage first in Fluffy Mod Manager: identify its English stage name
+and its corresponding sXXXXSoft.arc. This project uses s0600Soft.arc and
+s0503Soft.arc as valid main-story samples. Do not edit a different Soft.arc
+only because its name looks similar.
+
+A. S0600 Main-Story Enemy Replacement
+
+The spawn data is in soft/stage/s0600/s0600_em00.lot through s0600_em05.lot.
+The verified workflow is: extract ARC independently -> read the original LOT
+-> replace the fixed-length cSetInfoEmXXXX/uEmXXXX pairs -> rebuild ARC ->
+extract it again and compare every required entry.
+
+In this sample, multiple em01-em05 slots were changed to Em4700/4701/4710/4720
+and the target entities appeared at the original map positions and counts.
+However, em00 and other early check/set or gate-related slots may be part of
+stage progression. Replacing every enemy at once can prevent death counts,
+doors, or events from advancing. The first validated rollback is to restore
+the original em00 enemies, then restore the flow-related early em01/em02 slots
+gradually if needed.
+
+B. S0503 Main-Story NPC/Hostage Replacement
+
+The following three UN-hostage types were successfully changed to Em4700:
+Em5320, one sixth-floor female-hostage slot; Em5330, three first-floor
+conditional slots; and Em5340, two seventh-floor male-hostage slots. This is
+six slots across four LOT files.
+
+S0503 loaded successfully. The Em4700 model and materials were visible, and it
+performed the original hostage behavior and animations correctly in the hostage
+slots. This proves that, for this LOT object type, the entity can become
+uEm4700 while the original hostage choreography remains.
+
+It does not prove that all enemies, NPCs, or players can be swapped this way.
+Em4700 AI, attacks, collision, sound, death logic, checkpoints, cutscenes, and
+chapter transitions were not all verified in this sample.
+
+4. Mercenaries (MERC) Enemy Replacement
+
+Mercenaries must also use the exact "stage name + Soft.arc" pair. The rooftop
+sample is s1207Soft.arc. Its spawn entries are s1207_em*.lot; related flow
+control is in EmSet1207.fsm, SecretEnemy_Pop.fsm, Attack_Control_*.fsm, and
+Em_BossPop_*.fsm.
+
+Use this method: find the exact sXXXXSoft.arc for the Mercenaries stage; change
+only the intended sXXXX_em*.lot slots; keep that stage's spawn, score, attack,
+boss, hidden-enemy, and flow FSM files; then rebuild and read the ARC back.
+Finally test spawns, kills, score, waves, bosses, and hidden enemies in game.
+The stage name, Soft.arc, LOT files, and FSM files are one set. A main-story
+LOT or a character ARC inserted into a Mercenaries stage is not a reliable
+enemy-replacement solution.
+
+5. USM5919 Failure Case: Even the Same Family Cannot Be Directly Swapped
+
+S0872 uSm5919 is the clearest counterexample. All three changes below crashed
+immediately when the related map loaded: changing four sm5919 objects from uSM
+to uEm5330; changing uSM to uSm9010, an official class already used in the
+same LOT; and changing the unit to uPl while changing mpInfo.mName to
+pl05SherryAsia.
+
+The conclusion is that the USM family is not a generic interchangeable class.
+Even uSm9010 cannot replace this uSm5919 object by changing only mUnitClass.
+The cSetInfoInsModel/mpInfo structure needs the matching SetInfo type,
+RTTI/field layout, and initialization data. Replacing it with an enemy or a
+player would require a full transfer of that object system, not a class-name
+string edit.
+
+6. Test Result: Disguising USM5919 with Another MOD/MRL/TEX Set
+
+This project also placed uEm4700 MOD, MRL, and 23 referenced TEX files into the
+uSm5919 ARC container while retaining the original uSm5919 hit, NPC logic,
+collision, and SOUND/SPC/SRQ/MSE/BASE resources. Removing an incompatible old
+sm5919.bmt allowed the full uEm4700 mesh to appear; that proves only that the
+old BMT conflicted with the imported mesh layout.
+
+The route is still unstable. uEm4700 has 83 bones while the native uSm5919 NPC
+animation container has 27. The mesh flickers during some animations and can
+disappear entirely when another action is triggered. Enlarging global bounds,
+zeroing OtherMesh faces, and using native sm5919 LOD values were all tested and
+did not solve the skeleton/weight/local-transform mismatch.
+
+Do not treat an alien MOD/MRL/TEX set disguised as USM5919 as a releasable
+solution. Instead, use the native 27-bone uSm5919.mod as the 3D-software
+template, rebind the target mesh, transfer and inspect skin weights, then
+export a compatible sm5919.mod. ARC tooling belongs at the final MRL, TEX, and
+ARC rebuild stage; it cannot replace skeleton rebinding.
+
+7. Two Important Ultimate Trainer Options
+
+Missing Files Fix can keep a missing-resource test from immediately stopping,
+so missing resources or path errors can be located. It is a diagnostic aid and
+does not prove that the final resource chain is correct.
+
+Render Everything is also important. EM1000 testing verified that it affects
+whether related meshes are visible. Ordinary shader packs, including
+Wilsonso's shader pack, cannot substitute for Render Everything for these
+meshes. When a target mesh is invisible, first check whether the MRL/resource
+contract was broken, then make sure Render Everything is enabled. Do not
+misdiagnose a visibility-toggle issue as a failed XFS/LOT/ARC replacement.
+
+8. Recommended Unified Workflow
+
+1. Use Fluffy Mod Manager to identify the exact main-story or Mercenaries stage
+   and its sXXXXSoft.arc.
+2. Back up the original ARC and record its hash. Do not overwrite the nativePC
+   original.
+3. Extract with the Code X RE6-specific workflow and preserve original paths
+   and entry order.
+4. Change only verified paired LOT fields for enemies. For NPC/USM objects,
+   identify the full object structure before changing anything.
+5. Rebuild, extract again, and verify the target LOT/XFS data, paths, entry
+   count, entry order, and bytes.
+6. Use Missing Files Fix and Render Everything to eliminate resource-missing
+   and visibility variables, then test in game.
+7. For main story, verify gates, checkpoints, and cutscenes. For Mercenaries,
+   verify spawns, score, waves, bosses, and hidden enemies.
+8. Only a map that loads, shows the complete entity, and keeps its flow stable
+   is a usable enemy/NPC replacement.

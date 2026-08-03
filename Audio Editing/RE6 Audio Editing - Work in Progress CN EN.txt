@@ -1,0 +1,157 @@
+RE6 Audio Editing
+Work in Progress / 未完结
+============================================================
+
+中文
+====
+
+一、当前状态
+
+RE6 SPC 的解包、读取、单槽替换、重建和回读已经有验证过的底层能力，但“自动把任意
+替换音频调成游戏内正常听感”的编辑工具尚未完成。本目录不提供通用一键音频 MOD 工具。
+
+二、不同 SPC 不能共用一套参数
+
+不同 SPC 的差异目前可能来自流编码参数、SPC 元数据、目标槽位、游戏运行时播放规则，
+或这些因素的组合。现在还不能把它们全部归因于同一种“编码”，也不能把一个成功参数
+复制给所有 SPC。
+
+已观察到的 Em4700 例子：
+
+1. `snd_em4700_10.spc` 的已测试目标流为零基索引 22。当前候选补偿为：
+   `db M +11.5 dB`、音高 `+45`、速度 `1.5x`，且不把补尾静音或强制对齐原时长当作
+   默认规则。这个候选来自游戏内试听：只做音高补偿、速度保持 1.0 时仍会有变慢听感。
+
+2. `snd_em4700_body.spc` 的已测试目标流同样是零基索引 22，但它不应继承 `_10` 的
+   `+45` 音高规则。给 BODY 加上 `+45` 后，游戏里会直接听到明显升高的音调，因此 BODY
+   应从音高 `0` 开始，再用实际游戏试听决定是否需要音量、速度或其他调整。
+
+结论：`_10` 和 `body` 至少代表两种不同的处理情况。是否属于不同编码、不同运行时
+处理或不同资源语义，仍需继续取证。
+
+三、让 Em4700 在游戏内听起来正常，而不是尖嗓子的原则
+
+目标不是把某个数字固定套上去，而是让游戏内播放后的音高、速度、响度和时长接近目标
+原声的实际听感。
+
+1. 先提取未改动的目标 SLOT，并记录其原始采样率、声道、时长、编码载荷和游戏内听感。
+2. 对替换素材单独做音量、音高和速度候选；不要把 `_10` 的 `+45 / 1.5x` 套给 BODY。
+3. 在游戏中 A/B 对比。若声音变尖、变慢、变低或拖尾，当前候选就是失败，不可因为
+   “文件能回包”而继续使用。
+4. 记录每个 SPC、每个零基 SLOT 的最终参数和游戏验证结果。听感参数是按槽位保存的
+   候选，不是全局预设。
+
+四、未来 AI 自动处理应当做什么
+
+真正有价值的 AI 音频工具不应只是包装一堆 FFmpeg 按钮。它至少需要：
+
+1. 自动扫描 ARC/DLC ARC 的所有音频提供者，并定位实际 SPC 与 SLOT。
+2. 解码原始流，保留每个 SLOT 的零基索引、边界、哈希、时长、采样率、声道、编码与
+   已验证参数。
+3. 把多个 SLOT 可视化为带明确边界的总时间轴，但不能靠静音重新猜切片边界。
+4. 分析替换音频和游戏录音的波形、频谱、速度、音高和响度差异。
+5. 结合动作、场景和声音用途匹配候选 SLOT，并给出置信度；置信度不足时必须让人类确认。
+6. 为每个 SLOT 单独生成音量、音高、速度、时长和编码候选，重建 SPC 后再做游戏内
+   A/B 验证与下一轮参数调整。
+
+五、为什么现在不做完整音频工具
+
+如果只有普通编辑工具，人类仍要自己试听几十个短音频、判断用途、选择 SLOT、切片、
+调 dB/音高/速度、进游戏触发动作并记住每一轮结果。这样只是把“人类自己编辑音频”
+换成“人类自己点更多按钮”，依旧麻烦、费力和耗时。
+
+在 AI 还不能稳定理解声音用途、游戏上下文和最终听感之前，过早制作大界面不会真正
+减轻工作量。当前更合理的做法是保留已验证的 SPC 编码/重建能力，持续记录成功与失败
+参数，等待 AI 能把语义识别、候选匹配、游戏录音对比和调参迭代真正自动化后再开发。
+
+六、Game Over 声音切断：失败结论
+
+此前的“Game Over 声音切断”方向没有完成。最后的资源测试只让一组 BGM 候选静音，
+并没有证明真正的 Game Over 声音被单独定位或切断。
+
+当前结论：游戏的 SOUND 切断机制仍未理解。不能把“BGM 静音”称为“成功删除目标声音”，
+不能作为正式补丁，也不能当作已完成的音频功能。后续若继续，必须从原版资源链、实际
+触发顺序和单一资源验证重新开始。
+
+English
+-------
+
+1. Current Status
+
+Verified low-level abilities exist for RE6 SPC extraction, reading, single-slot
+replacement, rebuilding, and read-back. An editor that automatically makes an
+arbitrary replacement sound correct in game is not finished. This directory does
+not provide a universal one-click audio MOD tool.
+
+2. Different SPC Files Cannot Share One Parameter Set
+
+Observed differences can come from stream encoding parameters, SPC metadata,
+target slot, runtime playback behavior, or a combination of these. They cannot
+yet all be called one kind of "encoding," and a successful parameter set cannot
+be copied to every SPC.
+
+Observed Em4700 examples:
+
+1. The tested target stream in `snd_em4700_10.spc` is zero-based index 22. Its
+   current candidate compensation is `db M +11.5 dB`, pitch `+45`, and speed
+   `1.5x`. Padding with silence or forcing original duration is not the default.
+   This candidate came from in-game listening: pitch compensation alone with
+   speed 1.0 still sounded slow.
+
+2. The tested target stream in `snd_em4700_body.spc` is also zero-based index
+   22, but it must not inherit the `_10` pitch `+45` rule. Applying `+45` to
+   BODY produces an obviously raised in-game pitch. BODY should begin at pitch
+   `0`, then use real game listening to determine gain, speed, or other edits.
+
+Conclusion: `_10` and `body` represent at least two different processing cases.
+Whether the reason is different encoding, different runtime handling, or
+different resource semantics still requires evidence.
+
+3. Making Em4700 Sound Normal in Game Instead of Squeaky
+
+The target is not to impose one number. It is to make post-playback pitch,
+speed, loudness, and duration resemble the intended in-game reference.
+
+1. Extract the untouched target SLOT and record sample rate, channels, duration,
+   encoded payload, and in-game listening result.
+2. Make gain, pitch, and speed candidates for the replacement independently;
+   never apply `_10`'s `+45 / 1.5x` to BODY by default.
+3. Compare in game. A squeaky, slow, low, or trailing sound means the candidate
+   failed, even if the SPC rebuilt without error.
+4. Save final parameters and game verification per SPC and per zero-based SLOT.
+   Listening parameters are slot-specific candidates, not global presets.
+
+4. What Future AI Automation Must Do
+
+A useful AI audio tool must do more than expose FFmpeg buttons. It needs to
+scan ARC/DLC providers, preserve every SLOT boundary and metadata, visualize a
+timeline without guessing cuts from silence, compare source and in-game audio,
+match likely slots with confidence, generate per-slot candidates, rebuild SPC,
+and iterate from in-game A/B recordings. Low confidence must require human
+confirmation.
+
+5. Why a Full Audio Tool Is Not Being Built Yet
+
+With only a conventional editor, a person still has to listen to many short
+clips, identify their purpose, choose slots, cut audio, tune dB/pitch/speed,
+trigger actions in game, and track every result. That merely turns manual audio
+editing into manual use of more buttons: it remains tedious, labor-intensive,
+and slow.
+
+Until AI can reliably understand sound purpose, game context, and listening
+targets, a large UI will not remove the real workload. The sensible current
+path is to retain verified SPC encoding/rebuild capability, document successful
+and failed parameters, and wait to build a full editor until semantic matching,
+in-game recording comparison, and iteration can actually be automated.
+
+6. Game Over Sound Cut: Failure Record
+
+The previous Game Over sound-cut direction is not complete. Its final resource
+test only silenced a group of BGM candidates. It did not prove that the actual
+Game Over sound was individually located or cut.
+
+Current conclusion: the game's SOUND cut mechanism is still not understood.
+"BGM muted" must not be called a successful target-sound removal, cannot be a
+release patch, and is not a completed audio feature. Any continuation must
+restart from original resource chains, true trigger order, and single-resource
+validation.

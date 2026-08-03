@@ -1,0 +1,90 @@
+Wilsonso's shader pack issues
+Observed Behavior and Open Questions / 已观察行为与待验证问题
+=================================================================
+
+中文
+====
+
+一、已观察到的作用
+
+1. Wilsonso's shader pack 支持自定义 MRL 与 MOD 资源链。
+
+2. 当 Ultimate Trainer 用于替换模型时，部分过场动画可能不再显示替换后的模型。当前测试中，
+   Wilsonso's shader pack 能让过场动画重新渲染对应的原版模型，从而避免过场中模型完全消失。
+
+3. 因此，它可以处理“游戏运行中模型替换”和“过场动画仍需要原版渲染资源”之间的一部分
+   可见性冲突。这个行为不代表所有模型、所有动画和所有资源状态都已被覆盖。
+
+二、明确的边界
+
+Wilsonso's shader pack 不应被描述为完整的游戏资源恢复器。它对“某个特定游戏资源被删除、
+替换或二进制修改后是否仍可加载”的覆盖范围尚未完成验证。
+
+待验证问题：
+
+1. 它是否能处理删除或改动某一个特定游戏资源后的所有加载失败？
+   当前答案：未知，不能假定可以。
+
+2. AI 编辑的功能如果禁用了游戏声音，Wilsonso's shader pack 是否能让游戏仍然正常进入？
+   当前答案：未证明可以。在当前观察中，如果声音相关资源被禁用，游戏仍可能需要
+   Ultimate Trainer 才能继续进入游戏。
+
+3. 这说明“过场模型显示恢复”和“任意资源缺失/禁用后的完整运行恢复”是两类不同问题。
+   前者已有局部观察结果，后者不能由此推导。
+
+三、使用建议
+
+1. 只遇到过场模型不显示时，可先验证 Wilsonso's shader pack 是否恢复原版模型渲染。
+2. 遇到声音、脚本、动画、地图或其他具体资源被删除/改动时，不要直接假定 shader pack
+   能兜底；先保留原资源、单变量回退并检查游戏日志或加载行为。
+3. 如果必须启用 Ultimate Trainer 才能进入游戏，应把它记录为资源链或加载流程未解决，
+   而不是把 shader pack 视为已经完成修复。
+
+English
+-------
+
+1. Observed Behavior
+
+1. Wilsonso's shader pack supports custom MRL and MOD resource chains.
+
+2. When Ultimate Trainer is used to replace a model, some cutscenes can stop
+   displaying the replacement model. In current testing, Wilsonso's shader pack
+   allows the relevant original model to render during the cutscene, preventing
+   the model from disappearing completely.
+
+3. It can therefore address part of the visibility conflict between a runtime
+   model replacement and cutscene rendering that still needs an original render
+   resource. This does not prove coverage for every model, animation, or
+   resource state.
+
+2. Known Boundary
+
+Wilsonso's shader pack must not be described as a complete game-resource
+recovery layer. Its coverage when a specific game resource is deleted, replaced,
+or binary-modified has not been fully verified.
+
+Open questions:
+
+1. Can it handle every loading failure after a specific game resource is deleted
+   or changed?
+   Current answer: unknown. Do not assume that it can.
+
+2. If an AI-edited feature disables game sound, can Wilsonso's shader pack still
+   let the game enter normally?
+   Current answer: not proven. In current observation, a sound-related resource
+   being disabled can still require Ultimate Trainer before the game can enter.
+
+3. Restoring cutscene-model visibility and recovering from arbitrary missing or
+   disabled resources are different problems. The first has a local observed
+   result; the second cannot be inferred from it.
+
+3. Use Guidance
+
+1. When the only problem is a model not appearing in a cutscene, first verify
+   whether Wilsonso's shader pack restores original-model rendering.
+2. When sound, script, animation, map, or another concrete resource is deleted
+   or changed, do not assume the shader pack is a fallback. Retain originals,
+   revert one variable at a time, and inspect game logs or load behavior.
+3. If Ultimate Trainer is still required for the game to enter, record that as
+   an unresolved resource-chain or loading-flow problem, not as a completed
+   shader-pack repair.
