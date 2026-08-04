@@ -51,6 +51,66 @@ AI 现在还不能稳定、完整地理解语音、音效、三维内容、三�
 8. 贴图烘焙可同样参考上述 Nexus 页面。此前 EM4700 的工作记录里也写过贴图处理，
    但应把它视为一个样本，而不是所有角色的固定流程。
 
+三点一、从随附 AI LOG 抓取的具体操作流程
+
+以下流程整理自随附 AI LOG 中的 `Reference Workflow`。它是原记录作者的工作样本，
+不是独立复现后的通用规范；尤其是 DDS 格式，必须和当前目标 RE6 TEX 的实际合同及
+游戏内结果一起确认。
+
+模型、骨骼与 Mesh 分组：
+
+1. 对 MMD 模型，参考文本给出的起点是先在 Blender 导入 PMX，再缩放模型，并对照 RE
+   游戏原骨骼检查整体对齐。腿和脚的对齐可能需要单独处理；参考文本明确表示部分效果仍
+   未解决，因此不能假装这是已经完全自动化的步骤。
+2. 在 Blender 修正比例、姿势、FBX 材质或丢失贴图问题后，再将 FBX 交给 3ds Max。
+   Mesh 分割可在 Blender 或 Max 完成；随后才是 Skin Wrap、权重转移、重命名和导出。
+3. 先找出要替换的原版 Mesh 名，再让自定义 Mesh 使用该名字。参考文本的经验是，大腿或
+   腿部对应的原版 Mesh 名常是关键；它不是所有模型都可照抄的命名规则。
+4. EM4700 的参考样本要求把自定义模型拆为头、上半身、腿三个 Mesh。在 LOD 1 中，
+   参考文本记录的对应槽位是 Head Mesh 62、Legs Mesh 37、Upper Body Mesh 15。这是
+   EM4700 的样本，不是角色或其他敌人的固定编号。
+5. 参考文本把 Mesh 7 记为“没有顶点、但带 Skin modifier”的 Mesh，并建议跳过；也曾
+   因旧导出器问题跳过 Mesh 61 的牙齿 Skin Wrap。后者是历史限制，当前导出器是否仍
+   有同样问题必须重新测试，不能直接当成规则。
+6. 先完成一套 LOD Mesh，再克隆 Instance 供其他 LOD 使用，不要把每个 LOD 的每个
+   Mesh 都独立重做。参考文本推测 LOD 2 分组负责游戏阴影；本文件也只把它当作 EM4700
+   上的观察，不外推到角色或其他资源。
+7. 若使用 `RE6 COPY INSTANCE.ms`，它可以批量生成 LOD 的克隆 Instance，但参考文本说明
+   它没有自动识别能力，Mesh 条目仍需人工逐个加入、处理和清理。
+
+UV2 重排与检查：
+
+为什么 RE6 脚本需要导出 UV2：我不会熟练地排列 UV1，因此个人流程是把模型导入
+3ds Max 后，对 UV2 使用 Pack & Normalize，让 UV2 承载完整展开、无重叠的贴图布局，
+而不去碰原来的 UV1。为使这一布局能被后续 RE6 导出流程保留和使用，我才要求脚本
+支持导出 UV2。其他 MOD 作者可能更熟练，能以更好的方式整理 UV；这是个人工作流的
+绕行办法，不应被误写为所有人的最佳做法。
+
+1. 参考文本建议把 3DS 作为并排参考，因为它的导入/导出状态最接近原生 .MOD。
+2. 对所有准备导出的 Mesh 添加 Unwrap UVW modifier，并切换到 Channel 2。
+3. 使用 Move 和 Pack & Normalize，让 UV 岛完全摊开且没有重叠。
+4. 将 Unwrap UVW 拖到 Skin 和 Skin Wrap modifier 下方，再使用 Collapse To，把新的
+   UV2 布局固化到 Editable Mesh。
+5. 可把同一层的 Mesh 暂时用 Attach 合并做统一检查；检查结束后恢复合并前状态。
+
+贴图烘焙：
+
+1. 按 `0` 打开 Render to Texture，选择 `Using Existing Channel = 2`。
+2. 在 Output 添加 DiffuseMap，通过三点按钮将输出格式设为 PNG。
+3. Color Management 选择 `Color Space Conversion`，色彩空间设为 sRGB；参考文本警告
+   `No Conversion` 会得到发灰、低饱和的贴图。
+4. 将 Target Map Slot 设为 Base Color，Element Background 设为纯白，分辨率设为
+   4096 x 4096；启用 Baked Material 的 `Render to Files Only` 后开始烘焙。输出图可
+   作为后续 Base、Normal、Metallic 贴图制作的基础素材，不表示它们已经自动正确生成。
+5. 参考文本记录的旧 DDS 提示是：关闭 MIPMAP；BM 和 NM 使用 DXT5 Interpolated Alpha，
+   黑白 MM 使用 DXT1 1-bit Alpha。这与本文件第四节当前个人设置（BM/MM 为 DXT1
+   No Alpha，NM 为 DXT5 Interpolated Alpha）不一致。两者不能盲目混用：应以目标
+   TEX 版本、原贴图合同和游戏内回读结果决定最终格式。
+
+相邻 Mesh 的权重缝合：
+
+相邻 Mesh 的接缝可以使用权重缝合这一类处理；具体工具、参数和实现状态不在本文记录。
+
 四、当前玩家角色贴图设置：仅为已使用过的个人参数
 
 我目前按教学和实际测试，为玩家角色使用以下设置：
@@ -199,6 +259,88 @@ exist. Understand the format and verify the result when the work requires it.
 8. Texture baking can also refer to the Nexus page above. Existing EM4700 notes
    contain texture-processing examples, but they are examples, not a fixed
    workflow for every character.
+
+3.1 Concrete workflow captured from the attached AI log
+
+The following workflow was distilled from the `Reference Workflow` in the
+attached AI log. It is the original record author's working sample, not an
+independently reproduced universal rule. This matters especially for DDS
+settings: confirm the actual RE6 TEX contract of the target and the in-game
+result.
+
+Model, skeleton, and mesh grouping:
+
+1. For an MMD model, the reference text starts by importing PMX in Blender,
+   rescaling the model, and checking global alignment against the original
+   RE-game skeleton. Leg and foot alignment may need separate work. The
+   reference text explicitly leaves
+   some results unresolved, so this must not be presented as an automatic step.
+2. Correct scale, pose, FBX materials, or missing-texture problems in Blender,
+   then pass the FBX to 3ds Max. Mesh splitting can be done in Blender or Max;
+   Skin Wrap, weight transfer, renaming, and export follow afterward.
+3. Find the native mesh that should be replaced first, then give the custom
+   mesh that native name. The reference text notes that a thigh or leg native
+   mesh name is often important, but this is not a naming rule that applies to
+   all models.
+4. Its EM4700 example splits the custom model into head, upper body, and legs.
+   For LOD 1, the recorded target slots are Head Mesh 62, Legs Mesh 37, and
+   Upper Body Mesh 15. These numbers are an EM4700 sample, not fixed slots for
+   player characters or other enemies.
+5. The reference text calls Mesh 7 a mesh without vertices but with Skin
+   modifiers and says to skip it. It also skipped Skin Wrap on Mesh 61, the tooth mesh,
+   because of an older exporter issue. The second point is historical: test the
+   current exporter instead of treating it as a permanent rule.
+6. Finish one set of LOD meshes, then clone instances for other LODs rather
+   than independently rebuilding every mesh at every LOD. The reference text
+   suggests that LOD 2 groups drive in-game shadows. This document treats that only as
+   an EM4700 observation, not as a rule for players or other resources.
+7. If `RE6 COPY INSTANCE.ms` is used, it can batch-generate cloned instances
+   for LOD levels. The reference text says it has no automatic recognition, so
+   mesh entries still need to be added, processed, and cleared manually.
+
+UV2 remapping and inspection:
+
+Why the RE6 script needs UV2 export: I am not skilled at arranging UV1. In my
+personal workflow, I import the model into 3ds Max, run Pack & Normalize on
+UV2 so UV2 carries one complete, unfolded, non-overlapping texture layout, and
+do not touch the original UV1. The RE6 script therefore needs to preserve and
+export that UV2 result for the downstream workflow. Other MOD authors may be
+more skilled and organize UVs in a better way. This is a personal workaround,
+not a required or best-practice workflow for everyone.
+
+1. The reference text suggests using 3DS as a side-by-side reference because
+   its import and export state is closest to native .MOD.
+2. Add an Unwrap UVW modifier to every mesh intended for export, then switch to
+   Channel 2.
+3. Use Move and Pack & Normalize to spread the UV islands completely with no
+   overlaps.
+4. Move Unwrap UVW below the Skin and Skin Wrap modifiers, then use Collapse To
+   to bake the new UV2 layout into Editable Mesh.
+5. Meshes on the same layer may be temporarily combined with Attach for unified
+   inspection; restore the pre-merge state after inspection.
+
+Texture baking:
+
+1. Press `0` to open Render to Texture and select `Using Existing Channel = 2`.
+2. Add DiffuseMap under Output and use the three-dot control to select PNG as
+   the output format.
+3. In Color Management, use `Color Space Conversion` with sRGB. The reference
+   text warns that `No Conversion` produces dull, desaturated textures.
+4. Set Target Map Slot to Base Color, Element Background to solid white, and
+   resolution to 4096 x 4096. Enable `Render to Files Only` under Baked Material
+   and bake. The resulting images are base assets for later Base, Normal, and
+   Metallic-map work; they are not automatically correct final maps.
+5. The reference text's older DDS note says to disable MIPMAP, use DXT5
+   Interpolated Alpha for BM and NM, and use DXT1 1-bit Alpha for a black-and-
+   white MM. That differs from this document's current personal settings in
+   section 4 (DXT1 No Alpha for BM/MM and DXT5 Interpolated Alpha for NM). Do
+   not mix the two blindly: choose the final format from the target TEX version,
+   source texture contract, and read-back/in-game verification.
+
+Skin seams between adjacent meshes:
+
+Weight-seam handling exists for seams between adjacent meshes. Specific tools,
+parameters, and implementation status are intentionally not recorded here.
 
 4. Current texture settings for playable characters: personal working values
 
