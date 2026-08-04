@@ -40,9 +40,15 @@ AI 现在还不能稳定、完整地理解语音、音效、三维内容、三�
    Skin Wrap 等方法继续绑定。
 4. 个人流程中常常只导出 Mesh。骨骼一起导入或导出到 3ds Max 时，视图可能会显得很
    混乱；这不是骨骼不重要，而是要按实际目标决定是否保留和处理它。
-5. 权重绑定、刷权重和参数调整通常是最费时、最需要经验的部分。这里交给各位 MOD
+5. 做 MOD 时，自定义 Mesh 应替换明确的原版 Mesh，并使用对应原版 Mesh 的名字。若
+   不想把所有内容合成一个大 Mesh，可以选择多个不同的原版游戏 Mesh：分别把自己的
+   Mesh 重命名为相应原版 Mesh 名，再按这些目标做绑定和权重处理。
+6. 在 EM4700 的游戏内观察中，LOD 2 分组可能与阴影有关。若自定义 Mesh 没有 LOD 2，
+   它的 Mesh 名应与原 LOD 2 Mesh 名区分开；模型可能没有阴影，但这通常不是最重要的
+   问题。以上仅在 EM4700 敌人资源上做过游戏内验证，玩家角色尚未验证，不能直接外推。
+7. 权重绑定、刷权重和参数调整通常是最费时、最需要经验的部分。这里交给各位 MOD
    作者各自处理：本文不提供所谓万能参数，也不声称某一组数值能适用于换过的模型。
-6. 贴图烘焙可同样参考上述 Nexus 页面。此前 EM4700 的工作记录里也写过贴图处理，
+8. 贴图烘焙可同样参考上述 Nexus 页面。此前 EM4700 的工作记录里也写过贴图处理，
    但应把它视为一个样本，而不是所有角色的固定流程。
 
 四、当前玩家角色贴图设置：仅为已使用过的个人参数
@@ -177,10 +183,20 @@ exist. Understand the format and verify the result when the work requires it.
 4. The personal workflow often exports only meshes. Skeletons can make the 3ds
    Max view look confusing when imported or exported together. That does not
    make skeletons unimportant; retain and process them when the target needs it.
-5. Skin binding, weight painting, and parameter adjustment are normally the
+5. For a MOD, each custom mesh should replace a specific native mesh and use
+   that native mesh's name. If one large mesh is not desired, choose several
+   different native game meshes, rename the custom meshes to the corresponding
+   native mesh names, and bind and weight them against those targets.
+6. In the EM4700 in-game observation, the LOD 2 group may be related to the
+   shadow mesh. If a custom mesh has no LOD 2, its mesh name should be distinct
+   from the original LOD 2 mesh name. The model may then have no shadow, but
+   that is usually not the most important problem. This has been verified in
+   game only for the EM4700 enemy resource. It has not been verified for player
+   characters and must not be generalized to them.
+7. Skin binding, weight painting, and parameter adjustment are normally the
    most labor-intensive and experience-dependent parts. Each modder should
    handle them for the target model. No values in this note are universal.
-6. Texture baking can also refer to the Nexus page above. Existing EM4700 notes
+8. Texture baking can also refer to the Nexus page above. Existing EM4700 notes
    contain texture-processing examples, but they are examples, not a fixed
    workflow for every character.
 
