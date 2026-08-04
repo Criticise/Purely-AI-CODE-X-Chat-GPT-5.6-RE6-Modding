@@ -1,0 +1,289 @@
+3D Software Model Editing / 3D 软件模型编辑
+AI Boundaries and Personal RE6 MOD Notes / AI 的边界与个人 RE6 MOD 记录
+==========================================================================
+
+中文
+====
+
+一、开篇：AI 目前的边界
+
+AI 现在还不能稳定、完整地理解语音、音效、三维内容、三维软件界面和人的全部操作
+流程。它可以检索资料、阅读文件、整理步骤、提出假设和协助试错，但不能把一次回答
+当成已经验证过的 3D MOD 结论。
+
+本文只是一次简略而系统的个人 RE6 模型 MOD 记录，不是专业教学，也不是适用于所有
+模型、所有游戏或所有软件版本的黄金标准。参数、骨骼、权重、材质和资源合同都可能因
+模型而变；最终仍要回读文件并进游戏验证。
+
+二、获取模型：先找现有工具，再考虑逆向
+
+模型可能来自手机的岛屿 AI APP、模之屋等允许使用的模型社区、自己拥有并获准处理的
+其他游戏资源，或已知格式的解包结果，例如 VPK、PKG。手机应用导出的模型有时会在
+设备内部存储的 Android 目录或应用自己的导出目录中；实际位置会随应用和 Android
+版本变化，应先在设备中搜索最近下载或导出的文件。
+
+处理其他游戏资源时，必须只使用自己拥有、获许可或可合法研究的内容，不应非法分发
+受保护的原始资源。
+
+核心方法是先让 AI 搜索互联网和已有工具。成熟工具往往能把一整晚的格式推理或逆向
+缩短成一个可复现的工作流。AI 当然可能推导出解码或逆向方法，但在已有可靠工具时，
+先使用工具是合理的捷径；后续再根据需要理解文件结构和验证结果。
+
+三、Blender、3ds Max 与模型准备
+
+1. 先把源模型导入 Blender。若来源是 MMD，MMD -> Blender 或 Blender -> MMD 的
+   具体转换步骤目前没有重新验证，也记不完整。可参考
+   https://www.nexusmods.com/residentevil6/mods/692 ，以及以前的 AI 日志，不能把
+   本文当作 MMD 转换说明。
+2. 把 Blender 的 Undo History 设得尽可能高，便于在姿势、权重或导入操作出错后回退。
+3. 把模型摆成接近 RE6 尺寸的 T Pose。之后可尝试权重转移，或在 3ds Max 中使用
+   Skin Wrap 等方法继续绑定。
+4. 个人流程中常常只导出 Mesh。骨骼一起导入或导出到 3ds Max 时，视图可能会显得很
+   混乱；这不是骨骼不重要，而是要按实际目标决定是否保留和处理它。
+5. 权重绑定、刷权重和参数调整通常是最费时、最需要经验的部分。这里交给各位 MOD
+   作者各自处理：本文不提供所谓万能参数，也不声称某一组数值能适用于换过的模型。
+6. 贴图烘焙可同样参考上述 Nexus 页面。此前 EM4700 的工作记录里也写过贴图处理，
+   但应把它视为一个样本，而不是所有角色的固定流程。
+
+四、当前玩家角色贴图设置：仅为已使用过的个人参数
+
+我目前按教学和实际测试，为玩家角色使用以下设置：
+
+    尺寸：4096 x 4096
+    BM：DXT1，No Alpha
+    MM：DXT1，No Alpha
+    NM：DXT5 Interpolated Alpha
+    MIPMAP：全部不生成
+
+这些不是 RE6 的通用规范，也不是每个 MOD 都必须照抄的答案。我的做法是把所有 UV
+岛集中到一张贴图里；官方资源常把头和身体分到不同贴图。统一的大贴图放回 ARC、又不
+改变贴图路径时，容量会非常大，单个 ARC 甚至可能膨胀到数百 GB 而无法接受。
+
+因此我让 AI 在 MRL 中把贴图重定向到游戏目录 nativePC 下自定义的松散文件路径。MRL
+内必须从 nativePC 后的第一个目录开始写：
+
+    正确：1\2\3
+    错误：\1\2\3
+
+游戏会按下面的形式寻找文件：
+
+    nativePC\1\2\3
+
+也就是说，路径不能以反斜杠开头，也不要在 MRL 字符串里写 nativePC 前缀。更完整的
+规则和例子见同一发布目录的 `AI MRL PROJECT\01_MRL_Texture_Path_Redirection_CN_EN.txt`。
+
+五、缺失资源与测试开关
+
+启用 Ultimate Trainer 的 Missing Files Fix 后，删除资源不一定会让游戏立即闪退，因此
+可以继续观察资源链和路径问题。这是测试辅助，不表示删除资源后的 MOD 已经可以稳定
+发布。
+
+目前没有测试环境来确认 Wilsonso's shader pack 是否能在 ARC 内 TEX 被删除时，始终
+避免 Missing File 弹窗或崩溃。这是一个未完成问题：请自行测试并记录结果；不能把它
+当作已验证结论。
+
+六、EM4700 / EM4701 的贴图与 UV 观察
+
+敌人资源通常集中在相关 ARC 组内，手部有时不需要单独做 MOD，但必须按实际资源链
+确认。已观察到 EM4700 和 EM4701 的身体贴图实际使用 EM4700 那一组：修改 EM4701
+内部对应贴图，在该测试中没有生效。
+
+因此，如果 EM4701 会在游戏中单独出现，EM4700 与 EM4701 的 UV 岛需要兼容，最好按
+同一布局制作；否则 EM4701 上半身可能出现贴图错乱。对某些玩家资源，在 Missing Files
+Fix 开启时似乎可以省掉部分贴图，但这只能作为临时测试手段，不能当作稳定发布基线。
+
+之后若完成其他敌人、武器、玩家角色、场景或物件的测试，应继续以“资源实际由谁读取”
+为准记录，而不是只按文件名猜测。
+
+七、身体、手和头部的生产方式
+
+常见做法是先完成一个带手的身体，再把头部绑定上去，在 3ds Max 中用权重工具和刷子
+平滑权重。完成并备份后，身体 MOD 中的原头部 Mesh 可以删除，生成新的 MOD；但如果
+需要表情，通常仍要回到头部 MOD 或头部相关资源处理。
+
+八、跨 ARC 替换 MOD / MRL：当前只是待验证的假设
+
+在 Wilsonso's shader pack 存在，或者 Ultimate Trainer 同时开启 Missing Files Fix 与
+Render Everything 时，某些场景 ARC 和角色 ARC 之间也许可以直接放入准备好的 .MOD 和
+.MRL，以较快方式复用自己的模型，同时承接目标对象的动作、声音和台词。
+
+这不是已经验证的通用做法。贴图是否同路径、不同对象的动画容器、骨骼数量、BMT、碰撞
+和初始化资源都会造成限制，目前还没有整理出适用于全部角色和敌人的规则。
+
+uSm5919 是反例：曾把 uEm4700 的 MOD、MRL 和 TEX 放入 uSm5919 容器，删除不兼容的
+BMT 后，完整 Mesh 可以显示；但 uEm4700 有 83 根骨骼，uSm5919 原生动画容器只有 27
+根骨骼，动画中仍会闪烁或消失。这只能证明显示资源被装入，不能证明角色替换稳定。
+正确方向仍是以目标原生骨骼为模板，在 3D 软件中重新绑定并检查 Skin 权重。
+
+九、为什么留下这些记录
+
+如果未来 AI 能真正理解 3D 图形、三维软件和完整 RE6 MOD 工作流，人们或许只需提供
+创意和目标效果，而不必独自掌握所有技术步骤。更远的未来，在版权期限届满且具备合法
+权利的前提下，对游戏资源的充分理解也许能启发用现代引擎做出面向下一代玩家的全新
+演绎；这只是愿景，不是现在的能力，也不是对任何受保护资源的授权。
+
+十、最后说明
+
+本文不是合格的完整 MOD 教学。我目前没有足够时间、环境或专业知识去覆盖所有模型、
+权重、材质、动画和游戏资源情况。做 MOD 时应当多和 AI 一起思考、保留备份、做回读和
+游戏内验证；更要尊重其他人的权益，不侵犯他人的利益，把重点放在技术研究和自己的
+创作上。
+
+
+English
+-------
+
+1. Opening: the current boundary of AI
+
+AI does not yet reliably and completely understand voice, sound design, 3D
+content, 3D software interfaces, or every human workflow. It can search for
+references, inspect files, organize steps, form hypotheses, and help with
+experiments, but one answer is not a verified 3D-MOD conclusion by itself.
+
+This is a compact personal record of an RE6 model-MOD workflow, not a
+professional tutorial or a gold standard for every model, game, or software
+version. Parameters, skeletons, weights, materials, and resource contracts can
+change from model to model. Always read the output back and verify it in game.
+
+2. Getting models: find established tools before reverse engineering
+
+Models may come from a mobile Island AI App, permitted model communities such
+as MoZhiWu, game resources that you own and are allowed to process, or unpacked
+known formats such as VPK and PKG. A mobile application may save exports under
+an Android directory in internal storage or in its own export folder. The exact
+location varies by application and Android version, so search the device for
+recently downloaded or exported files first.
+
+When handling other-game resources, use only content you own, have permission
+to use, or can lawfully research. Do not unlawfully redistribute protected
+original assets.
+
+The core method is to ask AI to search the web and existing tooling first. A
+mature tool can turn a night of format reasoning or reverse engineering into a
+repeatable short workflow. AI may be able to derive a decoder or a reversing
+method, but using proven tools first is a valid shortcut when they already
+exist. Understand the format and verify the result when the work requires it.
+
+3. Blender, 3ds Max, and model preparation
+
+1. Import the source model into Blender. The precise MMD -> Blender or Blender
+   -> MMD route has not been re-verified and is no longer fully remembered.
+   See https://www.nexusmods.com/residentevil6/mods/692 and prior AI logs;
+   this document is not an MMD conversion guide.
+2. Raise Blender's Undo History as far as practical so pose, weighting, or
+   import mistakes can be rolled back.
+3. Arrange an approximate RE6-scale T-pose. Then try weight transfer, or use
+   methods such as Skin Wrap in 3ds Max for further binding.
+4. The personal workflow often exports only meshes. Skeletons can make the 3ds
+   Max view look confusing when imported or exported together. That does not
+   make skeletons unimportant; retain and process them when the target needs it.
+5. Skin binding, weight painting, and parameter adjustment are normally the
+   most labor-intensive and experience-dependent parts. Each modder should
+   handle them for the target model. No values in this note are universal.
+6. Texture baking can also refer to the Nexus page above. Existing EM4700 notes
+   contain texture-processing examples, but they are examples, not a fixed
+   workflow for every character.
+
+4. Current texture settings for playable characters: personal working values
+
+The following settings are currently used in this workflow:
+
+    Size: 4096 x 4096
+    BM: DXT1, No Alpha
+    MM: DXT1, No Alpha
+    NM: DXT5 Interpolated Alpha
+    MIPMAP: do not generate
+
+They are not universal RE6 requirements. This workflow places every UV island
+on one texture, while official resources often split head and body maps.
+Putting a large unified map back into an ARC without changing texture paths can
+make one ARC impractically large, potentially hundreds of GB.
+
+The MRL is therefore redirected to loose custom texture files below the game's
+nativePC directory. An MRL path must begin with the first directory below
+nativePC:
+
+    Correct: 1\2\3
+    Incorrect: \1\2\3
+
+The game resolves the file as:
+
+    nativePC\1\2\3
+
+Do not start the MRL string with a backslash and do not write the nativePC
+prefix in it. See `AI MRL PROJECT\01_MRL_Texture_Path_Redirection_CN_EN.txt`
+in this release tree for the complete rules and examples.
+
+5. Missing resources and test switches
+
+With Ultimate Trainer's Missing Files Fix enabled, removing a resource may not
+crash the game immediately. That can help diagnose resource-chain and path
+problems, but it does not mean the resulting MOD is stable enough to release.
+
+It remains untested whether Wilsonso's shader pack always avoids Missing File
+dialogs or crashes when a TEX resource inside an ARC has been removed. Treat
+this as future homework: test it and record the result instead of treating it
+as a verified conclusion.
+
+6. EM4700 / EM4701 texture and UV observation
+
+Enemy resources are usually concentrated in their relevant ARC set. Hands may
+not always need a separate MOD, but this must be confirmed from the real
+resource chain. In the observed EM4700 / EM4701 case, the body textures were
+actually read from the EM4700 set; editing the corresponding EM4701 texture
+assets had no effect.
+
+If EM4701 can appear independently, the EM4700 and EM4701 UV islands need to
+be compatible, preferably with the same layout. Otherwise EM4701's upper-body
+texture can be scrambled. Some player assets may appear to work with textures
+omitted while Missing Files Fix is enabled, but that is a temporary test method,
+not a stable release baseline.
+
+Future enemy, weapon, player, stage, and prop tests should record which
+resource the game actually reads, rather than guessing only from filenames.
+
+7. Building a body, hands, and head
+
+A common route is to complete a body that includes hands, attach and bind a
+head, then smooth the weights in 3ds Max with weight tools and brushes. After
+the work is complete and backed up, an original head mesh can be removed from a
+body MOD to create a new MOD. Facial animation will usually still require work
+on the head MOD or head-related resources.
+
+8. Cross-ARC MOD / MRL substitution: an unverified hypothesis
+
+With Wilsonso's shader pack present, or with Ultimate Trainer's Missing Files
+Fix and Render Everything both enabled, it may be possible in some stage-ARC
+and actor-ARC cases to place prepared .MOD and .MRL files across containers.
+The attraction is fast reuse of a custom model while the target supplies its
+own animation, sounds, and dialogue.
+
+This is not a generally verified method. Texture-path collisions, animation
+containers, bone counts, BMT, collision, and initialization resources all
+create restrictions. No universal rule for all characters and enemies has been
+established.
+
+uSm5919 is a counterexample. uEm4700 MOD, MRL, and TEX files were placed in a
+uSm5919 container. Removing an incompatible BMT made the full mesh visible,
+but uEm4700 has 83 bones while the native uSm5919 animation container has only
+27. The mesh still flickered or disappeared during animation. This proves that
+display resources entered the container; it does not prove a stable character
+replacement. The correct route is still to use the target's native skeleton as
+the 3D-software template, rebind the mesh, and inspect its skin weights.
+
+9. Why keep these notes
+
+If future AI can genuinely understand 3D graphics, 3D software, and the whole
+RE6 MOD workflow, people may be able to supply creative direction without
+mastering every technical step alone. Farther in the future, after copyright
+terms have expired and lawful rights exist, a deep understanding of game
+resources may inspire a modern-engine reinterpretation for later generations.
+That is a vision, not a current capability or permission to use protected work.
+
+10. Final note
+
+This is not a qualified complete MOD tutorial. The author does not currently
+have the time, environment, or professional knowledge to cover every model,
+weight, material, animation, and game-resource condition. Think with AI, keep
+backups, read files back, and test in game. Respect other people's rights and
+interests; focus on technical research and your own creation.
