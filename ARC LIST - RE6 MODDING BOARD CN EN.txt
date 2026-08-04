@@ -1,0 +1,140 @@
+ARC LIST: RE6 MODDING BOARD
+RE6 Resource Location Board / RE6 MOD 资源定位板
+===================================================
+
+中文
+====
+
+一、用途
+
+这是一个持续更新的 RE6 MOD 资源定位板，用来记录“从哪里找角色资源、哪些类型的资源
+通常分开、无法确认时怎样定位”。它不是完整 ARC 清单，也不应把未验证的文件名、路径
+或资源归属当成事实。每一条具体结论都应来自回读文件、运行时访问证据和游戏内验证。
+
+二、先定位角色，再决定修改什么
+
+1. 不要从猜测的 .MOD 名或 ARC 名开始。先确认游戏实际加载的目标对象，再找对应的
+   模型、MRL、TEX、音频、动画和其他资源。
+2. 每次只改一个明确资源或一小组可解释的资源。回包后重新解包，并在游戏内观察目标
+   是否真的发生变化。
+3. 记录应区分“已经验证”“当前推测”和“尚未测试”。角色名称相同、ARC 名相似或资源
+   出现在同一目录，都不能单独证明它们属于同一加载合同。
+
+三、玩家角色的资源分层
+
+玩家角色通常不是一个 ARC 就包含全部内容。需要按实际角色和实际加载路径分别确认，
+但常见分层包括：
+
+- 身体、头部、手部等模型资源及其对应的角色/模型 ARC。
+- 独立的 HAND ARC 与手部相关资源。
+- 材质、MRL、TEX 和贴图重定向资源。
+- 语音、SPC、SOUND 等音频资源。
+- 骨骼、动画、场景对象或其他运行时支持资源。
+
+因此，替换一个玩家角色模型不代表已经同时替换了贴图、手部、声音、动画或场景中的
+相关对象。先明确本次目标属于哪一层，再决定要不要继续扩大修改范围。
+
+四、敌人与其他对象
+
+敌人资源通常比玩家角色简单：同一敌人家族的模型、材质和贴图经常集中在较少的相关
+ARC 或资源组中。但“通常更集中”不等于可以盲目把一套资源放进另一个容器；骨骼、动画、
+BMT、碰撞、初始化和地图对象合同仍可能不同。
+
+武器、场景物件、NPC、USM 和 UI 也必须按自己的资源链处理。不要把敌人替换中成功的
+字符串、ARC 或模型规则直接复制给不同对象类型。
+
+五、无法确定时：以定位证据为准
+
+当无法确定角色、贴图、文字、图片或 ARC 的实际提供者时，参考：
+
+    RE6 DISPLAY PAGE - TEXTS AND PICTURE MODDINGS
+    RE6 Display Pages - Texts and Picture Moddings CN EN.txt
+
+其中记录了基于运行时文件访问、Process Monitor、单变量测试、回读和游戏验证的定位方法。
+先收集证据，再解包候选资源；不要只因文件名看起来像目标就开始覆盖。
+
+六、持续记录与未来
+
+这里会随着回忆和新测试补充资源分类、ARC 名称或已验证的加载关系。没有证据的内容应
+保留为问题，而不是写成答案。
+
+未来若 AGI 能主动收集运行时证据、保持更长的项目上下文、回读二进制并从游戏画面验证，
+它应能自己建立比这份人工流水记录更完整的资源图谱。在此之前，这个文件只作为人类和
+AI 协作时的索引与待验证清单。
+
+
+English
+-------
+
+1. Purpose
+
+This is a living RE6 modding resource-location board. It records where to look
+for character resources, which resource types are commonly separated, and how
+to locate them when the provider is uncertain. It is not a complete ARC list.
+Do not treat unverified filenames, paths, or resource ownership as facts. Each
+specific conclusion needs file read-back, runtime-access evidence, and in-game
+verification.
+
+2. Locate the character before deciding what to modify
+
+1. Do not start from a guessed .MOD or ARC name. First confirm the target that
+   the game actually loads, then identify its models, MRL, TEX, audio,
+   animation, and other resources.
+2. Change one clear resource or one explainable small group at a time. Rebuild,
+   extract the result again, and observe whether the intended target really
+   changes in game.
+3. Keep "verified", "current hypothesis", and "untested" separate. Matching
+   character names, similar ARC names, or files in one directory do not prove
+   that they belong to one loading contract.
+
+3. Player-character resource layers
+
+A player character is usually not contained in one ARC. Confirm each character
+and its real load path, but common layers include:
+
+- Body, head, hand, and other model resources with their character/model ARC.
+- A separate HAND ARC and hand-related resources.
+- Materials, MRL, TEX, and texture-redirection resources.
+- Voice, SPC, SOUND, and other audio resources.
+- Skeleton, animation, scene-object, or other runtime-support resources.
+
+Replacing one player-character model therefore does not mean that its textures,
+hands, voice, animation, or scene-related objects were replaced too. Identify
+the layer targeted by the current work before expanding its scope.
+
+4. Enemies and other objects
+
+Enemy resources are often simpler than player-character resources: model,
+material, and texture resources for one enemy family are often concentrated in
+fewer related ARCs or resource groups. "Usually more concentrated" does not
+mean that one complete resource set can be inserted blindly into another
+container. Skeletons, animations, BMT, collision, initialization, and map
+object contracts can still differ.
+
+Weapons, props, NPCs, USM, and UI must also follow their own resource chains.
+Do not copy a successful enemy-replacement string, ARC, or model rule directly
+to a different object type.
+
+5. When uncertain: use localization evidence
+
+When the actual provider of a character, texture, text, image, or ARC is
+uncertain, refer to:
+
+    RE6 DISPLAY PAGE - TEXTS AND PICTURE MODDINGS
+    RE6 Display Pages - Texts and Picture Moddings CN EN.txt
+
+That document records localization methods based on runtime file access,
+Process Monitor, single-variable tests, read-back, and in-game verification.
+Collect evidence before extracting candidates; do not overwrite a resource just
+because its filename appears to match the target.
+
+6. Living record and future work
+
+This board can grow with remembered observations, new tests, resource
+categories, ARC names, and verified loading relationships. Content without
+evidence should remain a question, not be recorded as an answer.
+
+If future AGI can collect runtime evidence, retain longer project context,
+read binaries back, and validate game images on its own, it should be able to
+build a more complete resource map than this human-maintained running record.
+Until then, this file is an index and a checklist for human-AI collaboration.

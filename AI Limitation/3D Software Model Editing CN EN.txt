@@ -148,18 +148,28 @@ RE6 脚本提供不同 Mesh 之间的权重缝合功能，但目前效果不理�
 避免 Missing File 弹窗或崩溃。这是一个未完成问题：请自行测试并记录结果；不能把它
 当作已验证结论。
 
-六、EM4700 / EM4701 的贴图与 UV 观察
+六、EM4700 / EM4701 的贴图、手部与 UV 观察
 
-敌人资源通常集中在相关 ARC 组内，手部有时不需要单独做 MOD，但必须按实际资源链
-确认。已观察到 EM4700 和 EM4701 的身体贴图实际使用 EM4700 那一组：修改 EM4701
-内部对应贴图，在该测试中没有生效。
+敌人资源通常集中在相关 ARC 组内。这里“没有单独做手部 MOD”不等于手部不需要 MOD；
+它只是为了省去单独制作和绑定手部而采用的工作流选择，仍必须按实际资源链确认。
+
+在当前 EM4700 观察中，游戏手部读取的是 EM4700 自己的 UV，而不是 EM4701 的模式。
+已观察到 EM4700 和 EM4701 的身体贴图实际使用 EM4700 那一组：修改 EM4701 内部对应
+贴图，在该测试中没有生效。一个尚未完成验证的推测是，EM4701 的 .MOD 实际也可能读取
+EM4700 的 UV；需要继续用二进制回读和游戏内单变量测试确认，不能当作定论。
 
 因此，如果 EM4701 会在游戏中单独出现，EM4700 与 EM4701 的 UV 岛需要兼容，最好按
-同一布局制作；否则 EM4701 上半身可能出现贴图错乱。对某些玩家资源，在 Missing Files
-Fix 开启时似乎可以省掉部分贴图，但这只能作为临时测试手段，不能当作稳定发布基线。
+同一布局制作；否则 EM4701 上半身可能出现贴图错乱。
 
-之后若完成其他敌人、武器、玩家角色、场景或物件的测试，应继续以“资源实际由谁读取”
-为准记录，而不是只按文件名猜测。
+玩家角色的手部也有独立的 HAND ARC。在身体文件中可以看到，玩家角色 .MOD 的多数
+手部 Mesh 位于 LOD 3。当前测试中，把这些 Mesh 的 LOD 字段设为 0 后，角色在游戏中
+会失去手部。手部 UV 与 HAND ARC 的 UV 似乎会遵循被修改 Mesh 的 UV：当修改的 Mesh
+本身带有双手时，额外不做手部权重绑定，游戏内也可能看起来正常。原因尚未研究清楚；
+这是学习时发现许多作者也在使用的省工路线，不是已经解释完成的资源合同。
+
+对某些玩家资源，在 Missing Files Fix 开启时似乎可以省掉部分贴图，但这只能作为临时
+测试手段，不能当作稳定发布基线。之后若完成其他敌人、武器、玩家角色、场景或物件的
+测试，应继续以“资源实际由谁读取”为准记录，而不是只按文件名猜测。
 
 七、身体、手和头部的生产方式
 
@@ -383,22 +393,38 @@ dialogs or crashes when a TEX resource inside an ARC has been removed. Treat
 this as future homework: test it and record the result instead of treating it
 as a verified conclusion.
 
-6. EM4700 / EM4701 texture and UV observation
+6. EM4700 / EM4701 texture, hands, and UV observation
 
-Enemy resources are usually concentrated in their relevant ARC set. Hands may
-not always need a separate MOD, but this must be confirmed from the real
-resource chain. In the observed EM4700 / EM4701 case, the body textures were
-actually read from the EM4700 set; editing the corresponding EM4701 texture
-assets had no effect.
+Enemy resources are usually concentrated in their relevant ARC set. "No
+separate hand MOD" does not mean that hands do not need a MOD. It is a workflow
+choice made to avoid separately creating and binding hands, and the real
+resource chain still needs confirmation.
+
+In the current EM4700 observation, the game reads EM4700's own hand UV rather
+than the EM4701 pattern. The EM4700 / EM4701 body textures were also actually
+read from the EM4700 set; editing the corresponding EM4701 texture assets had
+no effect. One unverified hypothesis is that the EM4701 .MOD may also read
+EM4700 UV. It needs binary read-back and in-game single-variable testing before
+it can be treated as a conclusion.
 
 If EM4701 can appear independently, the EM4700 and EM4701 UV islands need to
 be compatible, preferably with the same layout. Otherwise EM4701's upper-body
-texture can be scrambled. Some player assets may appear to work with textures
-omitted while Missing Files Fix is enabled, but that is a temporary test method,
-not a stable release baseline.
+texture can be scrambled.
 
-Future enemy, weapon, player, stage, and prop tests should record which
-resource the game actually reads, rather than guessing only from filenames.
+Player-character hands also have a separate HAND ARC. In the body file, most
+hand meshes in a player-character .MOD appear on LOD 3. In the current test,
+setting those mesh LOD fields to 0 made the character lose its hands in game.
+The hand UV and HAND ARC UV appear to follow the UV of the modified mesh: when
+the modified mesh already includes both hands, it can look normal in game
+without an additional hand-weight bind. The reason remains unknown. This is a
+labor-saving route used by many authors, not an explained or proven resource
+contract.
+
+Some player assets may appear to work with textures omitted while Missing Files
+Fix is enabled, but that is a temporary test method, not a stable release
+baseline. Future enemy, weapon, player, stage, and prop tests should record
+which resource the game actually reads, rather than guessing only from
+filenames.
 
 7. Building a body, hands, and head
 

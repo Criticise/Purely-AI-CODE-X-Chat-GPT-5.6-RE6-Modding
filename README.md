@@ -16,6 +16,7 @@ Test platform: `BH6 1.0.6.165`.
 | --- | --- |
 | `AI MRL PROJECT` | Research notes for MRL materials, texture paths, and visual effects. |
 | `AI Limitation` | Current AI boundaries and a personal 3D software model-editing workflow. |
+| `ARC LIST - RE6 MODDING BOARD CN EN.txt` | A living index for RE6 resource locations, character resource groups, and localization methods. |
 | `Audio Editing` | Unfinished research on RE6 audio and SPC editing. |
 | `Enemy Replacement` | Enemy and NPC replacement tests and limitations for main story and Mercenaries. |
 | `Free Camera CT File Fix Unfinished` | Unfinished work on free-camera and Cheat Engine CT-file fixes. |
@@ -40,6 +41,7 @@ using resources.
 | --- | --- |
 | `AI MRL PROJECT` | MRL 材质、贴图路径和视觉效果相关的研究记录。 |
 | `AI Limitation` | AI 当前能力边界，以及个人 3D 软件模型编辑工作流记录。 |
+| `ARC LIST - RE6 MODDING BOARD CN EN.txt` | RE6 资源位置、角色资源分组和定位方法的持续更新索引。 |
 | `Audio Editing` | RE6 音频与 SPC 相关的未完成编辑研究。 |
 | `Enemy Replacement` | 主线和佣兵模式中的敌人、NPC 替换测试与限制记录。 |
 | `Free Camera CT File Fix Unfinished` | 自由镜头与 Cheat Engine CT 文件修复方向的未完成研究。 |
