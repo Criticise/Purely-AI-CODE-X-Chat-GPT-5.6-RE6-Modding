@@ -6,6 +6,8 @@
 工作流和未完成课题为主，不是完整的通用教学，也不是承诺所有游戏版本、资源或 MOD
 都能直接使用的发布包。具体记录会随着后续测试继续变化，请以各目录内的 TXT 为准。
 
+测试平台：`BH6 1.0.6.165`。
+
 | 目录 / 文件 | 内容概括 |
 | --- | --- |
 | `AI MRL PROJECT` | MRL 材质、贴图路径和视觉效果相关的研究记录。 |
@@ -26,6 +28,8 @@ It contains experiments, observations, workflows, and unfinished topics. It is
 not a complete universal tutorial or a release package guaranteed to work with
 every game version, resource, or MOD. The individual TXT files are the source
 of detail and may change as testing continues.
+
+Test platform: `BH6 1.0.6.165`.
 
 | Directory / File | Scope |
 | --- | --- |
