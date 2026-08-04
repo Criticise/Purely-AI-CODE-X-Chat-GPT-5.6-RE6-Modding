@@ -75,8 +75,6 @@ AI 现在还不能稳定、完整地理解语音、音效、三维内容、三�
 6. 先完成一套 LOD Mesh，再克隆 Instance 供其他 LOD 使用，不要把每个 LOD 的每个
    Mesh 都独立重做。参考文本推测 LOD 2 分组负责游戏阴影；本文件也只把它当作 EM4700
    上的观察，不外推到角色或其他资源。
-7. 若使用 `RE6 COPY INSTANCE.ms`，它可以批量生成 LOD 的克隆 Instance，但参考文本说明
-   它没有自动识别能力，Mesh 条目仍需人工逐个加入、处理和清理。
 
 UV2 重排与检查：
 
@@ -304,9 +302,6 @@ Model, skeleton, and mesh grouping:
    than independently rebuilding every mesh at every LOD. The reference text
    suggests that LOD 2 groups drive in-game shadows. This document treats that only as
    an EM4700 observation, not as a rule for players or other resources.
-7. If `RE6 COPY INSTANCE.ms` is used, it can batch-generate cloned instances
-   for LOD levels. The reference text says it has no automatic recognition, so
-   mesh entries still need to be added, processed, and cleared manually.
 
 UV2 remapping and inspection:
 
