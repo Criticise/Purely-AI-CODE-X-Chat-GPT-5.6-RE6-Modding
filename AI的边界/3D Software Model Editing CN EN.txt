@@ -109,7 +109,7 @@ UV2 重排与检查：
 
 相邻 Mesh 的权重缝合：
 
-相邻 Mesh 的接缝可以使用权重缝合这一类处理；具体工具、参数和实现状态不在本文记录。
+RE6 脚本提供不同 Mesh 之间的权重缝合功能，但目前效果不理想，仍需要后续研究和实测。
 
 四、当前玩家角色贴图设置：仅为已使用过的个人参数
 
@@ -339,8 +339,8 @@ Texture baking:
 
 Skin seams between adjacent meshes:
 
-Weight-seam handling exists for seams between adjacent meshes. Specific tools,
-parameters, and implementation status are intentionally not recorded here.
+The RE6 script provides weight-seam handling between different meshes. Current
+results are not yet satisfactory and require further research and testing.
 
 4. Current texture settings for playable characters: personal working values
 
