@@ -1,0 +1,1098 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="52">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>1545</ID>
+      <Description>"Enable Freecam Settings"</Description>
+      <Options moHideChildren="1"/>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+
+globalalloc(cam_settings,$100)
+label(inv_y_flag cam_move_speed cam_look_speed l_button_speed r_button_speed)
+label(cam_controller dz fov)
+cam_settings:
+inv_y_flag:
+  dd 1
+cam_move_speed:
+  dd (float)2
+cam_look_speed:
+  dd (float)0.02
+l_button_speed:
+  dd (float)20
+r_button_speed:
+  dd (float).2
+cam_controller:
+  dd 0
+dz:
+  dd (float)0.20
+fov:
+  dd (float)45.0
+
+registersymbol(inv_y_flag cam_move_speed cam_controller dz fov)
+registersymbol(cam_look_speed l_button_speed r_button_speed)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(*)
+dealloc(cam_settings)
+</AssemblerScript>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>1546</ID>
+          <Description>"Invert Cam Y Look"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Disabled
+1:Enabled
+*:Unknown
+</DropDownList>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>cam_settings+0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1547</ID>
+          <Description>"Camera Move Speed"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>Float</VariableType>
+          <Address>cam_settings+4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1548</ID>
+          <Description>"Camera Look Speed"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>Float</VariableType>
+          <Address>cam_settings+8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1549</ID>
+          <Description>"L Button Speed"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>Float</VariableType>
+          <Address>cam_settings+C</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1550</ID>
+          <Description>"R Button Speed"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>Float</VariableType>
+          <Address>cam_settings+10</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1551</ID>
+          <Description>"Cam Controller"</Description>
+          <DropDownList ReadOnly="1" DescriptionOnly="1" DisplayValueAsItem="1">0:Controller 1
+1:Controller 2
+2:Controller 3
+3:Controller 4
+</DropDownList>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>cam_settings+14</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>1552</ID>
+          <Description>"Dead Zone (.1 = 10%)"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>Float</VariableType>
+          <Address>cam_settings+18</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>241</ID>
+          <Description>"Get Cam Info"</Description>
+          <Options moHideChildren="1"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ Game   : BH6.exe
+  Version: 
+  Date   : 2021-03-31
+  Author : Heebo
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(instr_get_vm,BH6.exe,F3 0F 10 81 90 00 00 00 F3 0F 11) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(vm)
+newmem:
+vm:
+  dd 0
+code:
+  mov [vm], ecx
+  movss xmm0,[ecx+00000090]
+  jmp return
+
+instr_get_vm:
+  jmp code
+  nop 3
+return:
+registersymbol(instr_get_vm vm)
+
+[DISABLE]
+
+instr_get_vm:
+  db F3 0F 10 81 90 00 00 00
+
+unregistersymbol(*)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BH6.exe+AFD88D
+
+BH6.exe+AFD853: 83 E4 F0                    - and esp,-10
+BH6.exe+AFD856: 8B 41 04                    - mov eax,[ecx+04]
+BH6.exe+AFD859: 81 EC 80 01 00 00           - sub esp,00000180
+BH6.exe+AFD85F: 85 C0                       - test eax,eax
+BH6.exe+AFD861: 0F 84 D3 0C 00 00           - je BH6.exe+AFE53A
+BH6.exe+AFD867: F3 0F 10 40 40              - movss xmm0,[eax+40]
+BH6.exe+AFD86C: F3 0F 10 89 94 00 00 00     - movss xmm1,[ecx+00000094]
+BH6.exe+AFD874: F3 0F 10 A1 98 00 00 00     - movss xmm4,[ecx+00000098]
+BH6.exe+AFD87C: F3 0F 10 91 A4 00 00 00     - movss xmm2,[ecx+000000A4]
+BH6.exe+AFD884: F3 0F 11 84 24 2C 01 00 00  - movss [esp+0000012C],xmm0
+// ---------- INJECTING HERE ----------
+BH6.exe+AFD88D: F3 0F 10 81 90 00 00 00     - movss xmm0,[ecx+00000090]
+// ---------- DONE INJECTING  ----------
+BH6.exe+AFD895: F3 0F 11 84 24 AC 00 00 00  - movss [esp+000000AC],xmm0
+BH6.exe+AFD89E: 0F 28 F8                    - movaps xmm7,xmm0
+BH6.exe+AFD8A1: F3 0F 10 81 A0 00 00 00     - movss xmm0,[ecx+000000A0]
+BH6.exe+AFD8A9: F3 0F 11 84 24 28 01 00 00  - movss [esp+00000128],xmm0
+BH6.exe+AFD8B2: F3 0F 11 84 24 44 01 00 00  - movss [esp+00000144],xmm0
+BH6.exe+AFD8BB: F3 0F 10 81 A8 00 00 00     - movss xmm0,[ecx+000000A8]
+BH6.exe+AFD8C3: F3 0F 10 99 B4 00 00 00     - movss xmm3,[ecx+000000B4]
+BH6.exe+AFD8CB: F3 0F 11 44 24 6C           - movss [esp+6C],xmm0
+BH6.exe+AFD8D1: F3 0F 11 84 24 64 01 00 00  - movss [esp+00000164],xmm0
+BH6.exe+AFD8DA: F3 0F 10 81 B0 00 00 00     - movss xmm0,[ecx+000000B0]
+}
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>1571</ID>
+              <Description>"Enable Freecam            (Hotkey: F7)"</Description>
+              <Options moHideChildren="1" moActivateChildrenAsWell="1" moDeactivateChildrenAsWell="1"/>
+              <GroupHeader>1</GroupHeader>
+              <Hotkeys>
+                <Hotkey>
+                  <Action>Toggle Activation</Action>
+                  <Keys>
+                    <Key>118</Key>
+                  </Keys>
+                  <ID>0</ID>
+                  <ActivateSound>Activate</ActivateSound>
+                  <DeactivateSound>Deactivate</DeactivateSound>
+                </Hotkey>
+              </Hotkeys>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>21848</ID>
+                  <Description>"Cam Control Script"</Description>
+                  <VariableType>Auto Assembler Script</VariableType>
+                  <AssemblerScript>[ENABLE]
+{$lua}
+local rad = math.rad
+local cos = math.cos
+local acos = math.acos
+local sin = math.sin
+local asin = math.asin
+local floor = math.floor
+local sqrt = math.sqrt
+local pi = math.pi
+local atan2 = math.atan2
+local deg = math.deg
+local abs = math.abs
+
+function inverse4x4(m)
+  local m112233 = m[1][1]*m[2][2]*m[3][3]
+  local m112234 = m[1][1]*m[2][2]*m[3][4]
+  local m112244 = m[1][1]*m[2][2]*m[4][4]
+  local m112243 = m[1][1]*m[2][2]*m[4][3]
+  local m112332 = m[1][1]*m[2][3]*m[3][2]
+  local m112334 = m[1][1]*m[2][3]*m[3][4]
+  local m112342 = m[1][1]*m[2][3]*m[4][2]
+  local m112344 = m[1][1]*m[2][3]*m[4][4]
+  local m112432 = m[1][1]*m[2][4]*m[3][2]
+  local m112433 = m[1][1]*m[2][4]*m[3][3]
+  local m112441 = m[1][1]*m[2][4]*m[4][1]
+  local m112442 = m[1][1]*m[2][4]*m[4][2]
+  local m112443 = m[1][1]*m[2][4]*m[4][3]
+  local m113243 = m[1][1]*m[3][2]*m[4][3]
+  local m113244 = m[1][1]*m[3][2]*m[4][4]
+  local m113342 = m[1][1]*m[3][3]*m[4][2]
+  local m113344 = m[1][1]*m[3][3]*m[4][4]
+  local m113442 = m[1][1]*m[3][4]*m[4][2]
+  local m113443 = m[1][1]*m[3][4]*m[4][3]
+  local m122133 = m[1][2]*m[2][1]*m[3][3]
+  local m122134 = m[1][2]*m[2][1]*m[3][4]
+  local m122143 = m[1][2]*m[2][1]*m[4][3]
+  local m122144 = m[1][2]*m[2][1]*m[4][4]
+  local m122244 = m[1][2]*m[2][2]*m[4][4]
+  local m122331 = m[1][2]*m[2][3]*m[3][1]
+  local m122334 = m[1][2]*m[2][3]*m[3][4]
+  local m122341 = m[1][2]*m[2][3]*m[4][1]
+  local m122344 = m[1][2]*m[2][3]*m[4][4]
+  local m122431 = m[1][2]*m[2][4]*m[3][1]
+  local m122432 = m[1][2]*m[2][4]*m[3][2]
+  local m122433 = m[1][2]*m[2][4]*m[3][3]
+  local m122441 = m[1][2]*m[2][4]*m[4][1]
+  local m122443 = m[1][2]*m[2][4]*m[4][3]
+  local m123143 = m[1][2]*m[3][1]*m[4][3]
+  local m123144 = m[1][2]*m[3][1]*m[4][4]
+  local m123341 = m[1][2]*m[3][3]*m[4][1]
+  local m123344 = m[1][2]*m[3][3]*m[4][4]
+  local m123441 = m[1][2]*m[3][4]*m[4][1]
+  local m123443 = m[1][2]*m[3][4]*m[4][3]
+  local m132134 = m[1][3]*m[2][1]*m[3][4]
+  local m132132 = m[1][3]*m[2][1]*m[3][2]
+  local m132142 = m[1][3]*m[2][1]*m[4][2]
+  local m132144 = m[1][3]*m[2][1]*m[4][4]
+  local m132231 = m[1][3]*m[2][2]*m[3][1]
+  local m132234 = m[1][3]*m[2][2]*m[3][4]
+  local m132241 = m[1][3]*m[2][2]*m[4][1]
+  local m132244 = m[1][3]*m[2][2]*m[4][4]
+  local m132431 = m[1][3]*m[2][4]*m[3][1]
+  local m132432 = m[1][3]*m[2][4]*m[3][2]
+  local m132441 = m[1][3]*m[2][4]*m[4][1]
+  local m132442 = m[1][3]*m[2][4]*m[4][2]
+  local m133142 = m[1][3]*m[3][1]*m[4][2]
+  local m133144 = m[1][3]*m[3][1]*m[4][4]
+  local m133241 = m[1][3]*m[3][2]*m[4][1]
+  local m133244 = m[1][3]*m[3][2]*m[4][4]
+  local m133441 = m[1][3]*m[3][4]*m[4][1]
+  local m133442 = m[1][3]*m[3][4]*m[4][2]
+  local m142132 = m[1][4]*m[2][1]*m[3][2]
+  local m142133 = m[1][4]*m[2][1]*m[3][3]
+  local m142142 = m[1][4]*m[2][1]*m[4][2]
+  local m142143 = m[1][4]*m[2][1]*m[4][3]
+  local m142144 = m[1][4]*m[2][1]*m[4][4]
+  local m142231 = m[1][4]*m[2][2]*m[3][1]
+  local m142233 = m[1][4]*m[2][2]*m[3][3]
+  local m142241 = m[1][4]*m[2][2]*m[4][1]
+  local m142243 = m[1][4]*m[2][2]*m[4][3]
+  local m142331 = m[1][4]*m[2][3]*m[3][1]
+  local m142332 = m[1][4]*m[2][3]*m[3][2]
+  local m142341 = m[1][4]*m[2][3]*m[4][1]
+  local m142342 = m[1][4]*m[2][3]*m[4][2]
+  local m143142 = m[1][4]*m[3][1]*m[4][2]
+  local m143143 = m[1][4]*m[3][1]*m[4][3]
+  local m143241 = m[1][4]*m[3][2]*m[4][1]
+  local m143243 = m[1][4]*m[3][2]*m[4][3]
+  local m143341 = m[1][4]*m[3][3]*m[4][1]
+  local m143342 = m[1][4]*m[3][3]*m[4][2]
+  local m213243 = m[2][1]*m[3][2]*m[4][3]
+  local m213244 = m[2][1]*m[3][2]*m[4][4]
+  local m213342 = m[2][1]*m[3][3]*m[4][2]
+  local m213344 = m[2][1]*m[3][3]*m[4][4]
+  local m213442 = m[2][1]*m[3][4]*m[4][2]
+  local m213443 = m[2][1]*m[3][4]*m[4][3]
+  local m223143 = m[2][2]*m[3][1]*m[4][3]
+  local m223144 = m[2][2]*m[3][1]*m[4][4]
+  local m223341 = m[2][2]*m[3][3]*m[4][1]
+  local m223344 = m[2][2]*m[3][3]*m[4][4]
+  local m223441 = m[2][2]*m[3][4]*m[4][1]
+  local m223443 = m[2][2]*m[3][4]*m[4][3]
+  local m233142 = m[2][3]*m[3][1]*m[4][2]
+  local m233144 = m[2][3]*m[3][1]*m[4][4]
+  local m233241 = m[2][3]*m[3][2]*m[4][1]
+  local m233244 = m[2][3]*m[3][2]*m[4][4]
+  local m233441 = m[2][3]*m[3][4]*m[4][1]
+  local m233442 = m[2][3]*m[3][4]*m[4][2]
+  local m243142 = m[2][4]*m[3][1]*m[4][2]
+  local m243143 = m[2][4]*m[3][1]*m[4][3]
+  local m243241 = m[2][4]*m[3][2]*m[4][1]
+  local m243243 = m[2][4]*m[3][2]*m[4][3]
+  local m243341 = m[2][4]*m[3][3]*m[4][1]
+  local m243342 = m[2][4]*m[3][3]*m[4][2]
+
+
+  local det = m[1][1] * (m223344 + m233442 + m243243 - m243342 - m233244 - m223443)
+            - m[2][1] * (m123344 + m133442 + m143243 - m143342 - m133244 - m123443)
+            + m[3][1] * (m122344 + m132442 + m142243 - m142342 - m132244 - m122443)
+            - m[4][1] * (m122334 + m132432 + m142233 - m142332 - m132234 - m122433)
+
+  return {{(m223344+m233442+m243243-m243342-m233244-m223443)/det,
+           (-m123344-m133442-m143243+m143342+m133244+m123443)/det,
+           (m122344+m132442+m142243-m142342-m132244-m122443)/det,
+           (-m122334-m132432-m142233+m142332+m132234+m122433)/det},
+          {(-m213344-m233441-m243143+m243341+m233144+m213443)/det,
+           (m113344+m133441+m143143-m143341-m133144-m113443)/det,
+           (-m112344-m132441-m142143+m142341+m132144+m112443)/det,
+           (m112334+m132431+m142133-m142331-m132134-m112433)/det},
+          {(m213244+m223441+m243142-m243241-m223144-m213442)/det,
+           (-m113244-m123441-m143142+m143241+m123144+m113442)/det,
+           (m112244+m122441+m142142-m142241-m122144-m112442)/det,
+           (-m112234-m122431-m142132+m142231+m122134+m112432)/det},
+          {(-m213243-m223341-m233142+m233241+m223143+m213342)/det,
+           (m113243+m123341+m133142-m133241-m123143-m113342)/det,
+           (-m112243-m122341-m132142+m132241+m122143+m112342)/det,
+           (m112233+m122331+m132132-m132231-m122133-m112332)/det}}
+
+
+end
+
+
+function MatMul( m1, m2 )
+    if #m1[1] ~= #m2 then       -- inner matrix-dimensions must agree
+        return nil
+    end
+
+    local res = {}
+
+    for i = 1, #m1 do
+        res[i] = {}
+        for j = 1, #m2[1] do
+            res[i][j] = 0
+            for k = 1, #m2 do
+                res[i][j] = res[i][j] + m1[i][k] * m2[k][j]
+            end
+        end
+    end
+
+    return res
+end
+function writeMatrix4x4(m, addy)
+    local bs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+    for i=1,4 do
+      for j=1,4 do
+      local a = floatToByteTable(m[i][j])
+        for k=1,4 do
+          bs[(i-1)*16+(j-1)*4+k] = a[k]
+        end
+      end
+    end
+    writeBytes(addy, bs)
+end
+
+function writeVec3(m, addy)
+    local bs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+    local j
+    local k
+    for j=1,3 do
+      local a = floatToByteTable(m[j])
+      for k=1,4 do
+        bs[(j-1)*4+k] =  a[k]
+      end
+    end
+
+    writeBytes(addy, bs)
+end
+
+local matrix_addy = getAddress("[vm]+90")
+--local eye_addy = matrix_addy+0x30
+--local matrix_addy = getAddress("[vm]")
+--local matrix2_addy = matrix_addy+0x380
+--local render_addy = matrix_addy+0x140
+--local eye_addy = matrix_addy+0x170
+local m = {{readFloat(matrix_addy), readFloat(matrix_addy+0x4), readFloat(matrix_addy+0x8), readFloat(matrix_addy+0xC)},
+     {readFloat(matrix_addy+0x10), readFloat(matrix_addy+0x14), readFloat(matrix_addy+0x18), readFloat(matrix_addy+0x1C)},
+     {readFloat(matrix_addy+0x20), readFloat(matrix_addy+0x24), readFloat(matrix_addy+0x28), readFloat(matrix_addy+0x2C)},
+     {readFloat(matrix_addy+0x30), readFloat(matrix_addy+0x34), readFloat(matrix_addy+0x38), readFloat(matrix_addy+0x3C)}}
+local inv_m = inverse4x4(m)
+local eye = {inv_m[4][1], inv_m[4][2], inv_m[4][3]}
+
+--[[
+local eye = {-readFloat(matrix_addy),
+             -readFloat(matrix_addy+4),
+             -readFloat(matrix_addy+8)}
+]]
+--[[
+local eye = {readFloat(eye_addy),
+             readFloat(eye_addy+4),
+             readFloat(eye_addy+8)}
+]]
+local yaw = atan2(readFloat(matrix_addy+0x20),readFloat(matrix_addy+0x0))--1.5707963267949
+local pitch = atan2(readFloat(matrix_addy+0x18),readFloat(matrix_addy+0x14))
+--yaw = 0
+--pitch = 0
+-- Cam Settings
+local inv_flag        = readInteger("inv_y_flag")
+local move_speed_orig = readFloat("cam_move_speed")
+local look_speed      = readFloat("cam_look_speed")
+local l_speed         = readFloat("l_button_speed")
+local r_speed         = readFloat("r_button_speed")
+local cam_ctrlr       = readInteger("cam_controller")
+local dead_zone       = readFloat("dz")
+
+
+
+function checkKeys()
+
+  local controller = getXBox360ControllerState(cam_ctrlr)
+  local move_speed = move_speed_orig
+  if controller == nil then
+     print("No XInput Controller found ! Disable Cam")
+     return
+  end
+
+
+  if controller.GAMEPAD_LEFT_SHOULDER then
+    move_speed = l_speed
+  end
+  if controller.GAMEPAD_RIGHT_SHOULDER then
+    move_speed = r_speed
+  end
+
+  local move_x_scale = controller.ThumbLeftX/32767
+  local move_y_scale = controller.ThumbLeftY/32767
+  local look_x_scale = controller.ThumbRightX/32767
+  local look_y_scale = controller.ThumbRightY/32767
+
+  if abs(move_x_scale) &lt; dead_zone then
+    move_x_scale = 0
+  end
+  if abs(move_y_scale) &lt; dead_zone then
+    move_y_scale = 0
+  end
+  if abs(look_x_scale) &lt; dead_zone then
+    look_x_scale = 0
+  end
+  if abs(look_y_scale) &lt; dead_zone then
+    look_y_scale = 0
+  end
+
+
+  move_x_scale = move_x_scale * move_speed
+  move_y_scale = move_y_scale * move_speed
+  look_x_scale = look_x_scale * look_speed
+  if inv_flag ~= nil and inv_flag == 1 then
+     look_y_scale = -look_y_scale
+  end
+  look_y_scale = look_y_scale * -look_speed
+
+  yaw = yaw + look_x_scale
+  pitch = pitch + look_y_scale
+  if pitch &gt;  1.57 then
+    pitch = 1.57
+  elseif pitch &lt; -1.57 then
+    pitch = -1.57
+  end
+
+
+  local pCos = cos(pitch)
+  local pSin = sin(pitch)
+  local yCos = cos(yaw)
+  local ySin = sin(yaw)
+
+  --[[
+  local yaw_mat = {{yCos, -ySin, 0, 0},
+             {ySin, yCos, 0, 0},
+             {0, 0, 1, 0},
+             {0, 0, 0, 1}}
+]]
+    local yaw_mat = {{yCos, 0,  -ySin, 0},
+                     {0, 1, 0, 0},
+                     {ySin, 0, yCos, 0},
+                     {0, 0, 0, 1}}
+
+  local pitch_mat = {{1, 0, 0, 0},
+               {0, pCos, pSin, 0},
+               {0, -pSin, pCos, 0},
+               {0, 0, 0, 1}}
+
+  eye[1] = eye[1] + (move_y_scale * ySin * pCos + move_x_scale * yCos)
+  eye[2] = eye[2] + move_y_scale * -pSin
+  eye[3] = eye[3] + (move_y_scale * -yCos * pCos + move_x_scale * ySin)
+
+
+
+  local trans_mat = {{1, 0, 0, 0},
+                     {0, 1, 0, 0},
+                     {0, 0, 1, 0},
+                     {-eye[1], -eye[2], -eye[3], 1}}
+
+
+  --if 90 and 180 are inverted on y scale, neg y scale
+  --print(eye[1], eye[2], eye[3], yaw, pitch)
+  --local rot_mat = MatMul(pitch_mat, yaw_mat)
+  local rot_mat = MatMul(yaw_mat, pitch_mat) --must be in this order or roll is introduced
+  --local view_matrix = MatMul(rot_mat, trans_mat)
+  local view_matrix = MatMul(trans_mat, rot_mat)
+
+  if controller.RightTrigger &gt; 25 then
+    eye[2] = eye[2] - move_speed
+    buttonPressed = controller.PacketNumber
+  end
+  if controller.LeftTrigger &gt; 25 then
+    eye[2] = eye[2] + move_speed
+    buttonPressed = controller.PacketNumber
+  end
+  writeMatrix4x4(view_matrix, matrix_addy)
+  --[[
+  local inv_m = inverse4x4(view_matrix)
+  writeMatrix4x4(inv_m, render_addy)
+  ]]
+
+end
+
+
+function fc_loop(thr_obj)
+  while fc_loop_running == true
+  do
+    checkKeys()
+    sleep(5)
+  end
+end
+
+if syntaxcheck then return end
+
+fc_loop_running = true
+fc_thread = createThread(fc_loop)
+
+
+[DISABLE]
+{$lua}
+fc_loop_running = false
+fc_thread = nil
+</AssemblerScript>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>21913</ID>
+                  <Description>"Disable Game Controller Input - Gemini"</Description>
+                  <VariableType>Auto Assembler Script</VariableType>
+                  <AssemblerScript>{
+  Game   : BH6.exe (Resident Evil 6)
+  Feature: Controller Input &amp; Camera Hook
+  Fixes  : Symbol registration and Beep feedback
+}
+
+[ENABLE]
+// 1. 查找特征码（增加长度以确保唯一性，防止勾选不上）
+aobscanmodule(instr_xinputgetstate, BH6.exe, 8B 0D ?? ?? ?? ?? 80 79 21 00 0F 84)
+alloc(newmem, $1000)
+
+label(code)
+label(return)
+label(xigs_bytes)
+
+// 2. 注册符号（拆分注册，确保在 Table 列表中显示）
+registersymbol(instr_xinputgetstate)
+registersymbol(xigs_bytes)
+
+newmem:
+// 存储原始指令，用于 Disable 时恢复
+xigs_bytes:
+  readmem(instr_xinputgetstate, 6)
+
+code:
+  // 清空手柄输入干扰，防止相机自动归位
+  and dword ptr [esi+2AC], 0
+  and dword ptr [esi+2B0], 0
+  and dword ptr [esi+2B4], 0
+
+  // 补回被 jmp 覆盖的原始指令
+  // 注意：这里的汇编需要与原始指令匹配
+  db 8B 0D // mov ecx, [...] 的机器码
+  readmem(instr_xinputgetstate+2, 4) // 动态读取原本的地址偏移
+
+  jmp return
+
+// 3. 注入脚本
+instr_xinputgetstate:
+  jmp code
+  nop
+return:
+
+// 4. 激活反馈：发出高音“滴”一声
+{$lua}
+  if syntaxcheck then return end
+  playSound(9)
+  print("Camera Hook Activated: Controller Mode Enabled.")
+{$asm}
+
+[DISABLE]
+// 5. 还原内存
+instr_xinputgetstate:
+  readmem(xigs_bytes, 6)
+
+// 6. 清理符号和内存
+unregistersymbol(instr_xinputgetstate)
+unregistersymbol(xigs_bytes)
+dealloc(newmem)
+
+// 7. 关闭反馈：发出低音“嘟”一声
+{$lua}
+  if syntaxcheck then return end
+  playSound(10)
+{$asm}
+
+{
+// ORIGINAL CODE - INJECTION POINT: BH6.exe+B46668
+
+BH6.exe+B46650: 51                 - push ecx
+BH6.exe+B46651: E8 63 37 4A 00     - call BH6.exe+FE9DB9
+BH6.exe+B46656: 85 C0              - test eax,eax
+BH6.exe+B46658: 74 0E              - je BH6.exe+B46668
+BH6.exe+B4665A: 8B CE              - mov ecx,esi
+BH6.exe+B4665C: E8 CF F0 FF FF     - call BH6.exe+B45730
+BH6.exe+B46661: 5F                 - pop edi
+BH6.exe+B46662: 32 C0              - xor al,al
+BH6.exe+B46664: 5E                 - pop esi
+BH6.exe+B46665: C2 04 00           - ret 0004
+// ---------- INJECTING HERE ----------
+BH6.exe+B46668: 8B 0D E8 E8 86 01  - mov ecx,[BH6.exe+146E8E8]
+// ---------- DONE INJECTING  ----------
+BH6.exe+B4666E: 80 79 21 00        - cmp byte ptr [ecx+21],00
+BH6.exe+B46672: 0F 84 CB 00 00 00  - je BH6.exe+B46743
+BH6.exe+B46678: 56                 - push esi
+BH6.exe+B46679: E8 F2 E4 FF FF     - call BH6.exe+B44B70
+BH6.exe+B4667E: 5F                 - pop edi
+BH6.exe+B4667F: B0 01              - mov al,01
+BH6.exe+B46681: 5E                 - pop esi
+BH6.exe+B46682: C2 04 00           - ret 0004
+BH6.exe+B46685: 8B 56 10           - mov edx,[esi+10]
+BH6.exe+B46688: A1 E8 E8 86 01     - mov eax,[BH6.exe+146E8E8]
+}
+</AssemblerScript>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>21912</ID>
+                  <Description>"Disable Game Cam Control"</Description>
+                  <VariableType>Auto Assembler Script</VariableType>
+                  <AssemblerScript>{ Game   : BH6.exe
+  Version: 
+  Date   : 2021-03-31
+  Author : Heebo
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(instr_nop_vm,BH6.exe,D9 00 8D 8C 24 D0 00 00 00)
+aobscanmodule(instr_write_proj_matrix,BH6.exe,D9 00 D9 5E A8) // should be unique
+instr_nop_vm: //we have to  clear all the fld an fstp or the stack will be wrong
+  db 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+  db 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+  db 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+  db 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+  db 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90
+instr_nop_vm:  //we just recreate the instrs we don't need to nop
+  db 8D 8C 24 D0 00 00 00 // lea ecx,[esp+000000D0]
+  db 51                   // push ecx
+  db 8B CF                // mov ecx,edi
+
+instr_write_proj_matrix:
+  db 90 90 90 90 90
+instr_write_proj_matrix+1D:
+  db 90 90 90 90 90 90
+registersymbol(instr_write_proj_matrix)
+registersymbol(instr_nop_vm)
+
+[DISABLE]
+
+instr_nop_vm:
+  db D9 00 8D 8C 24 D0 00 00 00 D9 9E 68 FF FF FF 51 D9 40 04 8B CF D9 9E 6C FF
+  db FF FF D9 40 08 D9 9E 70 FF FF FF D9 40 0C D9 9E 74 FF FF FF D9 40 10 D9 9E
+  db 78 FF FF FF D9 40 14 D9 9E 7C FF FF FF D9 40 18 D9 5E 80 D9 40 1C D9 5E 84
+  db D9 40 20 D9 5E 88 D9 40 24 D9 5E 8C D9 40 28 D9 5E 90 D9 40 2C D9 5E 94 D9
+  db 40 30 D9 5E 98 D9 40 34 D9 5E 9C D9 40 38 D9 5E A0 D9 40 3C D9 5E A4
+instr_write_proj_matrix:
+  db D9 00 D9 5E A8
+instr_write_proj_matrix+1D:
+  db D9 40 14 D9 5E BC
+unregistersymbol(*)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: BH6.exe+AFEC8E
+
+BH6.exe+AFEC71: 8D 84 24 D8 00 00 00  - lea eax,[esp+000000D8]
+BH6.exe+AFEC78: 50                    - push eax
+BH6.exe+AFEC79: FF D2                 - call edx
+BH6.exe+AFEC7B: EB 11                 - jmp BH6.exe+AFEC8E
+BH6.exe+AFEC7D: 8B 07                 - mov eax,[edi]
+BH6.exe+AFEC7F: 8B 50 48              - mov edx,[eax+48]
+BH6.exe+AFEC82: 8D 8C 24 D0 00 00 00  - lea ecx,[esp+000000D0]
+BH6.exe+AFEC89: 51                    - push ecx
+BH6.exe+AFEC8A: 8B CF                 - mov ecx,edi
+BH6.exe+AFEC8C: FF D2                 - call edx
+// ---------- INJECTING HERE ----------
+BH6.exe+AFEC8E: D9 00                 - fld dword ptr [eax]
+// ---------- DONE INJECTING  ----------
+BH6.exe+AFEC90: 8D 8C 24 D0 00 00 00  - lea ecx,[esp+000000D0]
+BH6.exe+AFEC97: D9 9E 68 FF FF FF     - fstp dword ptr [esi-00000098]
+BH6.exe+AFEC9D: 51                    - push ecx
+BH6.exe+AFEC9E: D9 40 04              - fld dword ptr [eax+04]
+BH6.exe+AFECA1: 8B CF                 - mov ecx,edi
+BH6.exe+AFECA3: D9 9E 6C FF FF FF     - fstp dword ptr [esi-00000094]
+BH6.exe+AFECA9: D9 40 08              - fld dword ptr [eax+08]
+BH6.exe+AFECAC: D9 9E 70 FF FF FF     - fstp dword ptr [esi-00000090]
+BH6.exe+AFECB2: D9 40 0C              - fld dword ptr [eax+0C]
+BH6.exe+AFECB5: D9 9E 74 FF FF FF     - fstp dword ptr [esi-0000008C]
+}
+</AssemblerScript>
+                  <Hotkeys>
+                    <Hotkey>
+                      <Action>Toggle Activation</Action>
+                      <Keys>
+                        <Key>119</Key>
+                      </Keys>
+                      <ID>0</ID>
+                    </Hotkey>
+                  </Hotkeys>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>21911</ID>
+      <Description>"No Low Health Screen Filter"</Description>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ Game   : BH6.exe
+  Version: 
+  Date   : 2022-05-18
+  Author : Heebo
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(instr_zero_red_screen,BH6.exe,F3 0F 58 46 48 F3 0F 10 0D ?? ?? ?? ?? 0F 2F C1 F3 0F 11 46 48 76 ?? F3 0F 11 4E 48 8B 56 44 D9 46 48 D9 5A 44) // should be unique
+
+instr_zero_red_screen:
+  db 0F 57 C0 90 90
+instr_zero_red_screen-1AE:
+  db 0F 57 C0 90 90
+registersymbol(instr_zero_red_screen)
+
+[DISABLE]
+
+instr_zero_red_screen:
+  db F3 0F 58 46 48
+instr_zero_red_screen-1AE:
+  db F3 0F 58 46 48
+
+unregistersymbol(*)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: BH6.exe+584384
+
+BH6.exe+584353: C6 46 38 16              - mov byte ptr [esi+38],16
+BH6.exe+584357: E9 A4 01 00 00           - jmp BH6.exe+584500
+BH6.exe+58435C: F3 0F 10 05 14 0A 51 01  - movss xmm0,[BH6.exe+1110A14]
+BH6.exe+584364: 8B 46 44                 - mov eax,[esi+44]
+BH6.exe+584367: F3 0F 11 46 48           - movss [esi+48],xmm0
+BH6.exe+58436C: F3 0F 11 40 44           - movss [eax+44],xmm0
+BH6.exe+584371: FE 46 38                 - inc byte ptr [esi+38]
+BH6.exe+584374: E9 87 01 00 00           - jmp BH6.exe+584500
+BH6.exe+584379: 8B 0D B4 E1 86 01        - mov ecx,[BH6.exe+146E1B4]
+BH6.exe+58437F: F3 0F 10 41 70           - movss xmm0,[ecx+70]
+// ---------- INJECTING HERE ----------
+BH6.exe+584384: F3 0F 58 46 48           - addss xmm0,[esi+48]
+// ---------- DONE INJECTING  ----------
+BH6.exe+584389: F3 0F 10 0D 10 81 55 01  - movss xmm1,[BH6.exe+1158110]
+BH6.exe+584391: 0F 2F C1                 - comiss xmm0,xmm1
+BH6.exe+584394: F3 0F 11 46 48           - movss [esi+48],xmm0
+BH6.exe+584399: 76 05                    - jna BH6.exe+5843A0
+BH6.exe+58439B: F3 0F 11 4E 48           - movss [esi+48],xmm1
+BH6.exe+5843A0: 8B 56 44                 - mov edx,[esi+44]
+BH6.exe+5843A3: D9 46 48                 - fld dword ptr [esi+48]
+BH6.exe+5843A6: D9 5A 44                 - fstp dword ptr [edx+44]
+BH6.exe+5843A9: 8B 4E 40                 - mov ecx,[esi+40]
+BH6.exe+5843AC: E8 0F EF 0C 00           - call BH6.exe+6532C0
+}
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>21916</ID>
+      <Description>"GPT-6 Dead but sounds continue + No Game over BGM"</Description>
+      <Options moActivateChildrenAsWell="1" moDeactivateChildrenAsWell="1"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>21917</ID>
+          <Description>"Keep scene audio after death (A1)"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ BH6 / RE6 - A1: skip the GameOver audio-mode request - TEST
+
+  Purpose: keep death animations while testing continued scene audio.
+  User confirmed continued audio after death on 2026-09-07.
+  One scenario tested with the original Gemini patch enabled.
+  Animation details and other death scenarios need further testing.
+
+  Analyzed EXE SHA256:
+  72B52D06A1C878A6D66701B192A47557BD844A0473D6F3CAFB0C736144235F74
+
+  Site: BH6.exe+71B35, call BH6.exe+1374A0
+  Callee: sets sBioSound mode 7 and two volume targets to zero.
+  Only this call site is changed. No hook, timer, allocation or trace.
+
+  Use either KEEP BLOOD or Gemini as the No Game Over option, never both.
+  Disable other experimental GameOver patches. Enable A1 BEFORE death.
+  Reload the checkpoint to restore an already-muted scene first.
+  Disabling A1 restores code, not an already-changed audio state.
+}
+
+[ENABLE]
+aobscanmodule(bh6_a1_audio_call,BH6.exe,8B 0D 5C 46 86 01 E8 66 59 0C 00 8B 0D 3C 52 7C 01 6A 00 E8 69 BF 0C 00)
+assert(bh6_a1_audio_call+6,E8 66 59 0C 00)
+assert(BH6.exe+137518,C7 86 40 3A 05 00 07 00 00 00 C7 86 48 3A 05 00 00 00 00 00 F3 0F 11 8E 60 39 05 00 F3 0F 11 8E 68 39 05 00)
+registersymbol(bh6_a1_audio_call)
+
+bh6_a1_audio_call+6:
+  db 90 90 90 90 90
+
+[DISABLE]
+assert(bh6_a1_audio_call+6,90 90 90 90 90)
+bh6_a1_audio_call+6:
+  db E8 66 59 0C 00
+unregistersymbol(bh6_a1_audio_call)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21918</ID>
+          <Description>"No Game Over Sound - bgm0100 to bgm0104 (B1)"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ BH6 / RE6 - B1: block common death BGM requests
+
+  Targets: bgm0100.sngw through bgm0104.sngw.
+  Current snd_cmn_bgm.stq IDs 1..5 reference source rows 0..4.
+  The two verified callers below request only these IDs.
+  bgm6666 (ID 6), other BGM tables and scene audio are unaffected.
+
+  Analyzed EXE SHA256:
+  72B52D06A1C878A6D66701B192A47557BD844A0473D6F3CAFB0C736144235F74
+
+  BH6.exe+71B7B: ID 1 -&gt; common BGM wrapper +13BAB0.
+  BH6.exe+5E69CD: ID 2/3/4/5 -&gt; same wrapper.
+  The original callee uses RET 8. ADD ESP,8 replaces its stack cleanup.
+  Both callers ignore its return value; no injected code is needed.
+
+  Enable before the next death. Existing playback is not stopped.
+  Keep A1 and the selected No Game Over option enabled.
+  The five files must have their original names for a valid audio test.
+  This entry never renames, deletes, or edits files.
+  Gameplay verification is pending.
+}
+
+[ENABLE]
+aobscanmodule(bh6_b1_request1,BH6.exe,8B 0D 5C 46 86 01 57 6A 01 E8 30 9F 0C 00 FE 47 05 5F C3)
+aobscanmodule(bh6_b1_request2to5,BH6.exe,8B 0D 5C 46 86 01 56 50 E8 DE 50 B5 FF 88 9E 32 02 00 00 0F 57 C0)
+assert(bh6_b1_request1+9,E8 30 9F 0C 00)
+assert(bh6_b1_request2to5+8,E8 DE 50 B5 FF)
+assert(BH6.exe+13BAB0,56 57 8B F9 8B B7 EC 39 05 00 85 F6 74 4F)
+assert(BH6.exe+13BB0D,5F 5E C2 08 00)
+assert(BH6.exe+5E69AB,B8 02 00 00 00 EB 13 B8 03 00 00 00 EB 0C B8 04 00 00 00 EB 05 B8 05 00 00 00)
+registersymbol(bh6_b1_request1)
+registersymbol(bh6_b1_request2to5)
+
+bh6_b1_request1+9:
+  db 83 C4 08 90 90
+bh6_b1_request2to5+8:
+  db 83 C4 08 90 90
+
+[DISABLE]
+assert(bh6_b1_request1+9,83 C4 08 90 90)
+assert(bh6_b1_request2to5+8,83 C4 08 90 90)
+bh6_b1_request1+9:
+  db E8 30 9F 0C 00
+bh6_b1_request2to5+8:
+  db E8 DE 50 B5 FF
+unregistersymbol(bh6_b1_request1)
+unregistersymbol(bh6_b1_request2to5)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>21919</ID>
+          <Description>"GPT-6 NO GAME OVER - KEEP BLOOD EFFECT"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ RE6 / BH6 - GPT-6 NO GAME OVER + KEEP BLOOD EFFECT (STANDALONE TEST)
+
+  This entry is independent. Do NOT enable it together with "No Game Over - Gemini".
+  Revision 3: skip only uIdGameover00 menu initialization. All other sUnit
+  objects, including death-demo and blood/effect objects, retain their original
+  initialization. The resource table count is reduced from
+  five to three so the two snd_sm1545 death-sound rows are not requested.
+
+  Target build: BH6.exe SHA256
+  72B52D06A1C878A6D66701B192A47557BD844A0473D6F3CAFB0C736144235F74
+  Menu vtable: VA 01590F40; constructor writes it at BH6.exe+59CC2A.
+  The old VA 0163FDD0 was a type-descriptor vtable, not a game-object vtable.
+  Enable before death; an already-created menu requires a checkpoint reload.
+  TEST: blood appearance and other death scenarios still require gameplay checks.
+  The 4 KB code buffer is reused and retained until process exit so disabling
+  cannot free code while a game thread is still returning from it.
+}
+
+[ENABLE]
+// Original site: cmp ecx,1 / jne +57 / mov edx,[esi] / and eax,-6
+ aobscanmodule(bh6_keep_blood_site,BH6.exe,75 57 8B 16 83 E0 FA 83 C8 02 89 46 10)
+ assert(bh6_keep_blood_site,75 57 8B 16 83 E0 FA 83 C8 02)
+ assert(BH6.exe+59CC2A,C7 06 40 0F 59 01)
+ assert(BH6.exe+1190F50,00 BF 99 00 A0 CC 99 00)
+ globalalloc(bh6_keep_blood_code_v3,$1000)
+ label(bh6_keep_blood_return)
+ label(bh6_keep_blood_skip)
+ registersymbol(bh6_keep_blood_site)
+
+bh6_keep_blood_code_v3:
+  cmp ecx,1
+  jne bh6_keep_blood_skip
+  // uIdGameover00 instance, not the death-animation object uSmGameOver.
+  cmp dword ptr [esi],BH6.exe+1190F40
+  je bh6_keep_blood_skip
+  mov edx,[esi]
+  and eax,-06
+  jmp bh6_keep_blood_return
+
+bh6_keep_blood_skip:
+  jmp bh6_keep_blood_site+59
+
+bh6_keep_blood_return:
+  jmp bh6_keep_blood_site+7
+
+// uSmGameOver resource table: retain model, soft-hit and effect; omit 2 sounds
+ aobscanmodule(ngo_usm_gameover_resource_table,BH6.exe,B8 07 62 01 98 49 86 01 98 07 62 01 6C 6D 7C 01 80 07 62 01 CC 6C 7C 01 68 07 62 01 D4 4F 86 01 68 07 62 01 CC 74 7C 01 05 00 00 00)
+ assert(ngo_usm_gameover_resource_table+28,05 00 00 00)
+ registersymbol(ngo_usm_gameover_resource_table)
+ fullAccess(ngo_usm_gameover_resource_table+28,4)
+ngo_usm_gameover_resource_table+28:
+  db 03 00 00 00
+
+// Publish the hook after its destination code has been written.
+bh6_keep_blood_site:
+  jmp bh6_keep_blood_code_v3
+  db 90 90
+
+[DISABLE]
+ assert(ngo_usm_gameover_resource_table+28,03 00 00 00)
+ ngo_usm_gameover_resource_table+28:
+  db 05 00 00 00
+ unregistersymbol(ngo_usm_gameover_resource_table)
+ assert(bh6_keep_blood_site,E9 ?? ?? ?? ?? 90 90)
+ bh6_keep_blood_site:
+  db 75 57 8B 16 83 E0 FA 83 C8 02
+ unregistersymbol(bh6_keep_blood_site)
+ // Keep bh6_keep_blood_code_v3 allocated for in-flight returns and reuse.
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>21915</ID>
+      <Description>"No Game Over - Old Heebo Presents"</Description>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>{ RE6 / BH6 - original Gemini No GameOver patch }
+[ENABLE]
+aobscanmodule(logic_fix,BH6.exe,75 ?? 8B 16 83 E0 FA 83 C8 02)
+assert(logic_fix,75 57 8B 16 83 E0 FA 83 C8 02)
+registersymbol(logic_fix)
+logic_fix:
+  db EB 57
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+-- KEEP BLOOD may own this address; never overwrite its active hook.
+local keep = getAddressSafe('bh6_keep_blood_site')
+local logic = getAddressSafe('logic_fix')
+if not keep and logic then
+  writeBytes(logic, 0x75, 0x57)
+end
+if logic then
+  unregisterSymbol('logic_fix')
+end
+</AssemblerScript>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>63000</ID>
+      <Description>"GPT-6 Partial UTrainer"</Description>
+      <Options moHideChildren="0" moActivateChildrenAsWell="1" moDeactivateChildrenAsWell="1"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>63001</ID>
+          <Description>"Missing Files Fix"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(gpt6_missing_files,BH6.exe,8B 4C 24 08 81 EC 00 04 00 00)
+assert(gpt6_missing_files,8B 4C 24 08)
+registersymbol(gpt6_missing_files)
+gpt6_missing_files:
+  db C3 90 90 90
+[DISABLE]
+assert(gpt6_missing_files,C3 90 90 90)
+gpt6_missing_files:
+  db 8B 4C 24 08
+unregistersymbol(gpt6_missing_files)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63002</ID>
+          <Description>"Render Everything"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(gpt6_render_everything,BH6.exe,75 18 8B 0D BC 48 86 01 80 B9 71 01 00 00 00)
+assert(gpt6_render_everything,75 18)
+registersymbol(gpt6_render_everything)
+gpt6_render_everything:
+  db EB
+[DISABLE]
+assert(gpt6_render_everything,EB 18)
+gpt6_render_everything:
+  db 75
+unregistersymbol(gpt6_render_everything)
+</AssemblerScript>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>63003</ID>
+          <Description>"Auto-Fix Textures [未完成 / Unfinished]"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{ UNFINISHED: experimental state toggle only.
+  This does not implement UTrainer's complete Auto-Fix Textures worker.
+  Character/outfit mapping, pointer repair, and worker timing are missing.
+  The texture repair effect is unverified. }
+[ENABLE]
+{$lua}
+if syntaxcheck then return end
+if gpt6_texture_timer then gpt6_texture_timer.destroy() end
+gpt6_texture_timer = createTimer(nil, false)
+gpt6_texture_timer.Interval = 100
+gpt6_texture_last = {}
+gpt6_texture_timer.OnTimer = function(t)
+  local ok, mgr = pcall(readPointer, getAddress('BH6.exe+13C6468'))
+  if not ok or not mgr or mgr == 0 then return end
+  local cfg = readPointer(getAddress('BH6.exe+13C5454'))
+  if not cfg or cfg == 0 then return end
+  for slot=0,7 do
+    local obj = readPointer(mgr + 0x24 + slot*4)
+    if obj and obj ~= 0 then
+      local ch = readBytes(cfg + 0x47D7C + slot*0x70, 1, false) or 0
+      local outfit = readBytes(cfg + 0x47D7D + slot*0x70, 1, false) or 0
+      local key = ch * 256 + outfit
+      if gpt6_texture_last[slot] ~= nil and gpt6_texture_last[slot] ~= key then
+        -- Re-enter the normal player refresh path. The descriptor pointer is
+        -- left intact; this avoids corrupting character/服装 map ownership.
+        writeInteger(obj + 0x38, 0)
+        writeInteger(obj + 0x38, 0x201)
+      end
+      gpt6_texture_last[slot] = key
+    end
+  end
+end
+gpt6_texture_timer.Enabled = true
+{$asm}
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+if gpt6_texture_timer then gpt6_texture_timer.destroy(); gpt6_texture_timer=nil end
+gpt6_texture_last = nil
+{$asm}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

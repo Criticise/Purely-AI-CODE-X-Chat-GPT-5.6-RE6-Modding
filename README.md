@@ -19,7 +19,7 @@ Test platform: `BH6 1.0.6.165`.
 | `ARC LIST - RE6 MODDING BOARD CN EN.txt` | A living index for RE6 resource locations, character resource groups, and localization methods. |
 | `Audio Editing` | Unfinished research on RE6 audio and SPC editing. |
 | `Enemy Replacement` | Enemy and NPC replacement tests and limitations for main story and Mercenaries. |
-| `Free Camera CT File Fix Unfinished` | Unfinished work on free-camera and Cheat Engine CT-file fixes. |
+| `RE6 Freecam + No Dead + EXE Patchers` | Free-camera, no-death, and executable patcher source files. |
 | `RE6 DISPLAY PAGE - TEXTS AND PICTURE MODDINGS` | Notes on locating and editing game display pages, text, and picture resources. |
 | `Wilsonso's shader pack issues.txt` | Compatibility, rendering, and missing-resource notes for Wilsonso's shader pack. |
 
@@ -44,7 +44,7 @@ using resources.
 | `ARC LIST - RE6 MODDING BOARD CN EN.txt` | RE6 资源位置、角色资源分组和定位方法的持续更新索引。 |
 | `Audio Editing` | RE6 音频与 SPC 相关的未完成编辑研究。 |
 | `Enemy Replacement` | 主线和佣兵模式中的敌人、NPC 替换测试与限制记录。 |
-| `Free Camera CT File Fix Unfinished` | 自由镜头与 Cheat Engine CT 文件修复方向的未完成研究。 |
+| `RE6 Freecam + No Dead + EXE Patchers` | 自由镜头、No Dead 与 EXE 补丁工具源文件。 |
 | `RE6 DISPLAY PAGE - TEXTS AND PICTURE MODDINGS` | 游戏显示页面、文字和图片资源修改的定位与操作记录。 |
 | `Wilsonso's shader pack issues.txt` | Wilsonso's shader pack 的兼容性、显示和缺失资源问题记录。 |
 
