@@ -1,0 +1,475 @@
+通用化骨骼缩放，让MAX即使将骨骼转换成Dummy也能正常显示场景！
+
+序言：骨骼变换问题的由来
+
+本次遇到的问题来自这样的转换流程：BLENDER 的 MMD TOOLS 插件将 MMD 转换成 BLENDER 模型之后，BLENDER 能够承接这种带缩放的骨骼，保证模型和场景正常显示。但是，同一套骨架经 FBX 导入 3DS MAX、被转换成 DUMMY 以后，骨骼继承的大倍率缩放也会放大 DUMMY 的辅助方框。大量方框和骨骼连接线重叠，就会出现满屏白色线框的现象。
+
+这就是本次 BUG 的根源原因：这类骨架缩放在 BLENDER 中能够正常显示，而 MAX 转换成 DUMMY 时，会把继承的缩放带入辅助对象的显示尺寸，造成方框膨胀。
+
+因此，骨骼通用变换需要在保持人物大小、关节世界位置和蒙皮效果的前提下，换算骨架缩放并同步修正绑定数据，让 MAX 即使将骨骼转换成 DUMMY，也能正常显示场景。下面记录的是这次已经通过 Max 实测和用户导入确认的处理经验。
+
+记录日期：2026-09-08
+验证环境：3ds Max 2026；FBX 导入时启用 ImportBoneAsDummy。
+验证状态：独立 Max 批处理检查通过，用户实际导入后确认“效果非常好”。
+
+一、这次成功的方法
+
+把骨架继承的大倍率换算到骨骼的局部位置数据中，使骨节点的世界缩放接近正常参考值；同时更新蒙皮绑定矩阵，保持人物大小、关节世界位置、骨架长度和蒙皮效果。
+
+变小的是 Dummy 的辅助方框，以及骨节点变换基底的尺度。人物和骨架所占的世界空间保持原样。
+
+本次保留了全部 172 根骨头，包括末端骨；保留骨名、ID、父子层级、网格、材质和全部蒙皮权重。没有通过删除骨头来改善画面。
+
+“通用化”是可复用的处理原则。本次实现和验证针对下面的静态、统一正缩放样本；处理其他结构时，需要先检查其变换和绑定约定。
+
+二、对照样本与问题定位
+
+正常显示参考：Generic 通用 接缝还没处理.fbx
+待修复样本：Generic 通用 无标题.fbx
+成功输出：Generic 通用 无标题_接缝骨骼尺寸测试.fbx
+
+两份原文件的骨骼类型完全一致：
+  Model 类型：LimbNode
+  NodeAttribute 类型：LimbNode
+  TypeFlags：Skeleton
+  骨骼属性 Size：1.5
+  InheritType：1
+  RotationOrder：0
+
+关键差异：
+
+1. 《接缝》有 83 根骨头，大多数骨头的世界缩放约为 1.000055。
+   它的根骨 b_256_1 虽然有 366.723602 倍缩放，但两个直接子骨带有 0.002727 倍缩放，乘积约为 1.000055，后续大部分骨头因此恢复到接近 1 倍。
+
+2. 《无标题》有 172 根骨头，父级 ch0100_40_00 Armature 带有约 39.37007874 倍统一缩放。后代骨头没有抵消这个倍率，整套骨架的世界基底尺度都约为 39.37。
+
+3. Max 在这次导入中创建的骨骼 Dummy，本地盒子约为 1 x 1 x 1。继承约 39.37 倍世界缩放后，盒子也被放大，大量方框重叠，形成“炸出一堆 Helper”的视觉效果。
+
+4. 《接缝》的全部骨头带有 LODBox=1，导入后对应 boxMode=True；《无标题》缺少该标记，导入后 boxMode=False。本次同时复制了 LODBox=1。它与缩放处理共同构成成功版本，但尚未通过单变量实验确认这个显示标记是否必需。
+
+5. 《无标题》启用转 Dummy 后，场景仍是 175 个节点：
+   172 个骨骼 Dummy + 1 个 Armature Dummy + 2 个网格。
+   节点没有额外增加。Dummy 本来就属于 Max 的 Helper 分类，两个分类计数不能相加。
+
+经验：诊断时应沿父子层级计算世界矩阵，检查世界缩放。只看单根骨头的 Lcl Scaling，容易漏掉 Armature 父级传下来的大倍率。
+
+三、本次缩放换算步骤
+
+本样本满足以下条件：
+  - 单一 Armature 根容器，其父级为场景根。
+  - Armature 使用统一、正数缩放。
+  - 全部 172 根骨头位于该容器下，骨架子树里没有网格。
+  - InheritType=1；无 PreRotation、PostRotation、Pivot、Offset。
+  - 无动画对象；网格位于骨架子树之外。
+
+定义：
+  s = Armature 原来的统一缩放。
+  q = 希望骨头达到的参考世界缩放。
+  k = s / q，即本次需要移除的统一倍率。
+
+本次取《接缝》骨骼世界缩放的中位数作为 q：
+  s = 39.37007874015747
+  q = 1.000055262654
+  k = 39.36790316534614
+
+具体修改：
+
+1. Armature 的 Lcl Scaling 除以 k。
+2. 全部后代骨头的 Lcl Translation 乘以 k。
+3. 保留骨头和容器的旋转；保留骨头局部缩放的原始浮点细节。
+4. Armature 本身的位置保持原值。
+5. 给全部骨头复制参考文件的 LODBox=1。
+6. 保留 LimbNode / Skeleton 类型，以及原有 Size=1.5。
+7. 按下一节同步更新全部相关绑定矩阵。
+
+这样，大倍率会从骨节点的世界基底中消除，同时由平移数据的换算补偿骨架的空间位置。
+
+其他文件的 k 应从其实际数据计算，不能把 39.37 写成所有 FBX 共用的固定倍率。目标 q 可以取经验证的正常参考骨节点尺度，或者在明确单位约定后采用约 1 倍的目标。
+
+四、蒙皮绑定必须同步更新
+
+下面的公式对应本次二进制解析器直接读取、改写的 FBX 序列化矩阵，采用行向量约定：
+  点变换：p_world = p_local * W
+  平移位于 16 元素数组的索引 12、13、14。
+
+此样本的原始 Cluster 数组满足：
+  Transform * TransformLink = MeshBind
+
+其中，Transform 在本次序列化数据中表示网格到骨骼绑定空间的变换，TransformLink 表示骨骼绑定世界矩阵。
+
+使用 FBX SDK 或其他库时，应先确认其接口返回值的语义；不能直接把这里的原始数组公式当成所有 SDK 的 GetTransformMatrix / SetTransformMatrix 公式。
+
+令：
+  D = diag(k, k, k, 1)
+  Dinv = diag(1/k, 1/k, 1/k, 1)
+
+对于 Armature 和全部受影响骨头：
+  World_new = Dinv * World_old
+
+这会把世界矩阵的 3 x 3 基底除以 k，保留世界平移。
+
+对于每个相关 Cluster：
+  TransformLink_new = Dinv * TransformLink_old
+  Transform_new = Transform_old * D
+
+对应的数组操作：
+  - TransformLink：索引 0、1、2、4、5、6、8、9、10 除以 k。
+    索引 12、13、14 的平移不变。
+  - Transform：前三个空间列乘以 k，包含索引 12、13、14 的平移分量。
+    齐次列保持原样。
+
+必须成立的两个等式：
+  Transform_new * TransformLink_new
+    = Transform_old * TransformLink_old
+
+  Transform_new * World_new
+    = Transform_old * World_old
+
+第一个等式保持网格绑定空间；第二个等式保持当前姿态下的蒙皮变换。
+
+本次还处理了两个容易遗漏的地方：
+
+1. TransformAssociateModel
+   全部 276 个 Cluster 都带有此矩阵。先验证它对应原 Armature 的世界矩阵，再对它做 Dinv 左乘，保持它与更新后的 Armature 一致。
+   其他文件若关联不同对象，应根据真实关联对象的变换计算，不能一律套 Armature 的倍率。
+
+2. BindPose / PoseNode / Matrix
+   骨头和 Armature 的全局绑定姿态矩阵做 Dinv 左乘。
+   网格的绑定姿态矩阵保持原样。
+   本次两个 BindPose 共更新 278 个相关 PoseNode；其余条目保持原样。
+   本样本的 PoseNode 均为全局矩阵。含局部 PoseNode 的文件需要按局部空间另外计算。
+
+全部 276 个 Cluster 均同步处理，包含没有非零权重的 Cluster，以保持原有绑定记录完整。
+
+五、保留的数据与实现注意点
+
+必须保留并对照检查：
+  - 全部 Model、NodeAttribute 的 ID、名称与类型。
+  - Connections 中的父子关系和蒙皮连接。
+  - Geometry 的顶点、面、UV、法线等数据。
+  - 材质及相关资源。
+  - Skin / Cluster 的 Indexes、Weights、骨骼引用。
+  - 原有末端骨和零权重骨。
+
+本次只调整必要的变换数据、绑定矩阵和显示标记。
+
+骨骼数量多、末端骨多，本身不构成需要删除它们的理由。《无标题》的 172 根骨中，138 根被 Cluster 引用，90 根具有实际非零权重，另有 34 根无 Cluster 引用的末端骨。本次全部保留。
+
+避免用会同时缩放矩阵平移的普通“整矩阵乘倍率”函数代替 Dinv 左乘。TransformLink 和全局 Pose 矩阵的平移必须保持；Transform 的处理方向又与它们不同。
+
+首次处理应另存新 FBX，保留原始文件。用户本次确认成功的输出文件没有覆盖原文件。
+
+六、验证方法和本次结果
+
+第一层：文件数据验证。
+  - 检查改写前后 ID、节点数、连接关系一致。
+  - 验证网格、材质、权重数据未变。
+  - 验证各骨头世界位置未变，新的世界基底等于原基底除以 k。
+  - 验证每个 Cluster 的绑定乘积和当前蒙皮变换乘积一致。
+  - 写入后重新解析，确认数据往返一致。
+
+本次文件级结果：
+  - 172 根骨头完整保留。
+  - 276 个 Cluster 同步更新。
+  - 骨节点世界缩放约为 1.000046 至 1.000057。
+  - 世界位置最大分量误差约 1.42e-14。
+  - 蒙皮变换矩阵最大分量误差约 2.49e-14。
+
+第二层：独立 Max 导入验证。
+  - 开启 ImportBoneAsDummy，分别导入原版和新版。
+  - 对照节点名、父级、Skin 骨引用和顶点数。
+  - 测量 Dummy 本地盒和世界盒的大小。
+  - 对照静态姿态的全部网格顶点。
+  - 对同名骨头执行相同的局部旋转，再对照全部顶点，确认蒙皮仍一致。
+
+本次 Max 结果：
+  - 原版、新版均为 173 个 Dummy + 2 个网格。
+  - 两个网格分别有 17318、776 个顶点，两个 Skin 均引用 138 根骨头。
+  - 新版骨骼 Dummy 的世界包围盒对角线约为 1.732 至 2.725。
+  - 原版对应范围约为 68.191 至 107.276。
+  - 新版全部 172 个骨骼 Dummy 均有 boxMode=True。
+  - 静态姿态最大顶点差约 0.000033 个场景单位。
+  - Hip 局部旋转 20 度后，最大顶点差约 0.000043 个场景单位。
+  - l_skirtA_chain_2 局部旋转 20 度后，最大顶点差约 0.000033 个场景单位。
+  - 两个旋转测试均确认有顶点实际运动，避免“骨头没有驱动网格”的假通过。
+
+世界包围盒是轴对齐的；骨头旋转角度不同，即使本地盒同样大，世界包围盒对角线也会不同。应结合本地盒尺寸和世界基底尺度判断。
+
+第三层：用户实际导入确认。
+  用户将成功输出导入 Max 后，截图显示辅助框回到合理大小，并明确反馈“效果非常好”。
+
+七、扩展到其他 FBX 时的边界
+
+当前脚本验证的是统一正缩放、静态骨架。若存在动画、约束、多个 Armature、骨架下的 Mesh、非均匀缩放、负缩放、剪切、特殊 InheritType、Pivot 或 Pre/PostRotation，应完整计算变换，重新验证，不能直接沿用“所有骨头平移乘 k”的简化操作。
+
+动画文件还需要同步换算相关动画轨道或逐帧求值、重烘焙，并验证整段动画。本次两个局部旋转实验验证了这些测试姿态的蒙皮一致性，没有验证任意动画文件。
+
+需要始终保留的两条判断原则：
+  1. 骨架关节世界位置、模型尺寸和蒙皮行为应保持一致。
+  2. Dummy 的显示基底尺度应归一到与目标场景相匹配的范围。
+
+LODBox 是本次匹配 Max 外观的参考设置，骨骼类型仍保持标准的 LimbNode / Skeleton。单独改类型标签、删除末端骨或仅调整 Size，都没有替代上述完整流程的验证依据。
+
+八、本次成功样本与复现资料
+
+成功 FBX：
+C:\Users\1\Desktop\Generic 通用 无标题_接缝骨骼尺寸测试.fbx
+
+成功 FBX 的 SHA-256：
+2828770a7e5aff448f7f3342d2a75c86b305edacbcd6de3f2b166757beec108f
+
+本次实验目录：
+C:\Users\1\Documents\Codex\2026-09-07\niha\work\fbx_compare_20260908
+
+目录中的关键文件：
+  rebuild_dummy_size.py：本次重建脚本，带针对该输入结构的检查，不是已完成的通用转换器。
+  untitled_reference_dummy_size.fbx：与桌面成功版内容相同的实验输出。
+  untitled_reference_dummy_size.json：文件变换与保留数据的验证记录。
+  validate_dummy_rebuild_max.py：Max 原版 / 新版对照及旋转蒙皮验证脚本。
+  dummy_rebuild_max.json：Max 验证结果。
+  structure.json、max_imports.json：修复前两份 Generic FBX 的结构和导入对照。
+
+复现脚本使用的现有 FBX 解析器：
+C:\Users\1\Desktop\Generic FBX Converter 通用FBX 转换器.py
+
+后续集成转换器时，应把“检测骨架世界缩放、保留世界位置的换算、同步更新全部绑定数据、文件及 DCC 验证”作为完整流程实现。
+
+
+========================================================================
+ENGLISH VERSION
+
+Normalizing Bone Scale So MAX Can Display the Scene Correctly Even After Converting Bones to Dummy Objects!
+
+Preface: Where the Bone Transform Problem Comes From
+
+The problem encountered here arose from this conversion workflow: after BLENDER's MMD TOOLS plugin converts an MMD model into a BLENDER model, BLENDER can handle the scaled bones and display the model and scene correctly. However, when the same skeleton is imported into 3DS MAX through FBX and converted to DUMMY objects, the large scale inherited by the bones also enlarges the DUMMY helper boxes. Numerous boxes and bone connection lines overlap, filling the screen with white wireframes.
+
+This is the root cause of the BUG observed in this case: BLENDER can display this kind of skeleton scale correctly, whereas MAX includes the inherited scale in the helper objects' display dimensions when converting the bones to DUMMY objects, causing their boxes to expand.
+
+A reusable bone transform procedure therefore needs to adjust the skeleton scale and update the binding data together, while preserving the character's size, the joints' world positions, and the skinning result. This allows MAX to display the scene correctly even when it converts the bones to DUMMY objects. The following notes document the procedure that passed testing in Max and was confirmed by the user's actual import.
+
+Record date: 2026-09-08
+Validation environment: 3ds Max 2026; ImportBoneAsDummy enabled during FBX import.
+Validation status: independent Max batch checks passed, and the user confirmed after importing the file that "the result is very good."
+
+1. The Procedure That Worked in This Case
+
+Transfer the large inherited skeleton scale into the bones' local position data so that the bone nodes' world scales approach the normal reference value. Update the skin binding matrices at the same time to preserve the character's size, the joints' world positions, the skeleton's lengths, and the skinning result.
+
+What becomes smaller is the Dummy helper boxes and the scale of the bone nodes' transform bases. The world-space extent of the character and skeleton stays unchanged.
+
+All 172 bones were retained in this case, including end bones. Bone names, IDs, parent-child hierarchy, meshes, materials, and all skin weights were preserved. No bones were deleted to improve the display.
+
+"Generalization" refers to a reusable processing principle. This implementation and its validation cover the static sample with uniform positive scale described below. Other structures require their transform and binding conventions to be checked first.
+
+2. Comparison Samples and Diagnosis
+
+Reference with correct display: Generic 通用 接缝还没处理.fbx
+Sample to repair: Generic 通用 无标题.fbx
+Successful output: Generic 通用 无标题_接缝骨骼尺寸测试.fbx
+
+The two original files have exactly the same bone types:
+  Model type: LimbNode
+  NodeAttribute type: LimbNode
+  TypeFlags: Skeleton
+  Bone property Size: 1.5
+  InheritType: 1
+  RotationOrder: 0
+
+Key differences:
+
+1. The reference file, Generic 通用 接缝还没处理.fbx, contains 83 bones. Most have a world scale of approximately 1.000055.
+   Although its root bone b_256_1 has a scale of 366.723602, its two immediate child bones have a scale of 0.002727. Their product is approximately 1.000055, so most subsequent bones return to a scale close to 1.
+
+2. Generic 通用 无标题.fbx contains 172 bones. Its parent, ch0100_40_00 Armature, has a uniform scale of approximately 39.37007874. The descendant bones do not cancel this factor, so the world-space basis scale of the entire skeleton is approximately 39.37.
+
+3. The bone Dummy objects created by Max during this import have local boxes of approximately 1 x 1 x 1. After inheriting a world scale of approximately 39.37, these boxes are enlarged too. Many overlapping boxes create the visual impression of "a mass of Helper objects exploding into the scene."
+
+4. All bones in the reference file have LODBox=1, which corresponds to boxMode=True after import. Generic 通用 无标题.fbx lacks this flag and imports with boxMode=False. LODBox=1 was also copied in this repair. Together with the scale adjustment, it forms part of the successful version, but no single-variable experiment has yet established whether this display flag is necessary.
+
+5. With bone-to-Dummy conversion enabled, Generic 通用 无标题.fbx still contains 175 scene nodes:
+   172 bone Dummy objects + 1 Armature Dummy object + 2 meshes.
+   No additional nodes were created. Dummy already belongs to Max's Helper category, so the counts for these two categories must not be added together.
+
+Diagnostic lesson: calculate world matrices along the parent-child hierarchy and inspect the world scale. Checking only an individual bone's Lcl Scaling can miss the large factor inherited from the Armature parent.
+
+3. Scale Conversion Steps Used in This Case
+
+This sample meets the following conditions:
+  - A single Armature root container whose parent is the scene root.
+  - The Armature uses uniform positive scale.
+  - All 172 bones are under this container, and the skeleton subtree contains no meshes.
+  - InheritType=1; no PreRotation, PostRotation, Pivot, or Offset.
+  - No animation objects; the meshes are outside the skeleton subtree.
+
+Definitions:
+  s = the Armature's original uniform scale.
+  q = the desired reference world scale for the bones.
+  k = s / q, the uniform factor to remove in this case.
+
+The median bone world scale in Generic 通用 接缝还没处理.fbx was used as q:
+  s = 39.37007874015747
+  q = 1.000055262654
+  k = 39.36790316534614
+
+Specific changes:
+
+1. Divide the Armature's Lcl Scaling by k.
+2. Multiply the Lcl Translation of every descendant bone by k.
+3. Preserve the rotations of the bones and container; retain the original floating-point details of the bones' local scales.
+4. Keep the Armature's own position unchanged.
+5. Copy LODBox=1 from the reference file to all bones.
+6. Preserve the LimbNode / Skeleton types and the original Size=1.5.
+7. Update all related binding matrices as described in the next section.
+
+This removes the large factor from the bone nodes' world-space bases while compensating through translation data to preserve the skeleton's spatial positions.
+
+For other files, k must be calculated from their actual data. Do not hard-code 39.37 as a factor shared by all FBX files. The target q can be taken from a validated reference bone-node scale, or a target of approximately 1 can be used after the unit conventions have been established.
+
+4. Skin Binding Must Be Updated at the Same Time
+
+The formulas below apply to the serialized FBX matrices read and rewritten directly by the binary parser used in this case. They use a row-vector convention:
+  Point transformation: p_world = p_local * W
+  Translation is at indices 12, 13, and 14 of the 16-element array.
+
+The original Cluster arrays in this sample satisfy:
+  Transform * TransformLink = MeshBind
+
+In this serialized data, Transform represents the transformation from mesh space to bone binding space, and TransformLink represents the bone's bind-world matrix.
+
+When using the FBX SDK or another library, first confirm the semantics of the values returned by its interfaces. Do not directly treat these raw-array formulas as universally applicable formulas for every SDK's GetTransformMatrix / SetTransformMatrix interfaces.
+
+Let:
+  D = diag(k, k, k, 1)
+  Dinv = diag(1/k, 1/k, 1/k, 1)
+
+For the Armature and all affected bones:
+  World_new = Dinv * World_old
+
+This divides the world matrix's 3 x 3 basis by k while preserving its world translation.
+
+For each related Cluster:
+  TransformLink_new = Dinv * TransformLink_old
+  Transform_new = Transform_old * D
+
+Equivalent array operations:
+  - TransformLink: divide indices 0, 1, 2, 4, 5, 6, 8, 9, and 10 by k.
+    Keep the translation at indices 12, 13, and 14 unchanged.
+  - Transform: multiply the first three spatial columns by k, including the translation components at indices 12, 13, and 14.
+    Keep the homogeneous column unchanged.
+
+Two equalities must hold:
+  Transform_new * TransformLink_new
+    = Transform_old * TransformLink_old
+
+  Transform_new * World_new
+    = Transform_old * World_old
+
+The first equality preserves the mesh binding space. The second preserves the skinning transformation in the current pose.
+
+Two easily overlooked areas were also handled in this case:
+
+1. TransformAssociateModel
+   All 276 Clusters contain this matrix. First verify that it corresponds to the original Armature's world matrix, then left-multiply it by Dinv to keep it consistent with the updated Armature.
+   If another file associates a different object, calculate the update from that object's actual transform. Do not apply the Armature's factor indiscriminately.
+
+2. BindPose / PoseNode / Matrix
+   Left-multiply the global bind-pose matrices of the bones and Armature by Dinv.
+   Keep the meshes' bind-pose matrices unchanged.
+   A total of 278 related PoseNodes were updated across the two BindPoses in this case; all other entries were kept unchanged.
+   All PoseNodes in this sample are global matrices. Files containing local PoseNodes require separate calculations in local space.
+
+All 276 Clusters were updated together, including Clusters with no nonzero weights, to preserve the complete original binding records.
+
+5. Data Preservation and Implementation Notes
+
+Preserve and compare:
+  - The IDs, names, and types of all Model and NodeAttribute objects.
+  - Parent-child relationships and skin connections in Connections.
+  - Geometry data, including vertices, faces, UVs, and normals.
+  - Materials and associated resources.
+  - Skin / Cluster Indexes, Weights, and bone references.
+  - Existing leaf bones and bones with zero weights.
+
+This repair changes only the required transforms, bind matrices, and display flags.
+
+A large number of bones or leaf bones is not, by itself, a reason to remove them. Of the 172 bones in Generic 通用 无标题.fbx, 138 are referenced by Clusters, 90 have actual nonzero weights, and 34 additional leaf bones have no Cluster references. All were retained.
+
+Do not replace left multiplication by Dinv with a generic matrix-scaling helper that also scales translation. Translation must be preserved in TransformLink and global Pose matrices; Transform requires a different multiplication order.
+
+Save the first repaired result as a new FBX and retain the original. The output confirmed by the user did not overwrite its source.
+
+6. Validation Procedure and Results
+
+Level 1: File Data Validation.
+  - Check that IDs, node counts, and connections remain unchanged.
+  - Verify that geometry, materials, and weights are unchanged.
+  - Verify that every bone's world position is preserved and that its new world basis equals its original basis divided by k.
+  - Verify that each Cluster retains both its bind-matrix product and its current skin-deformation matrix product.
+  - Reparse the written file to verify that its data survives the write/read round trip.
+
+Results from the file-level checks:
+  - All 172 bones were retained.
+  - All 276 Clusters were updated together.
+  - Bone world-space scales were approximately 1.000046 to 1.000057.
+  - The maximum world-position component error was approximately 1.42e-14.
+  - The maximum skin-deformation matrix component error was approximately 2.49e-14.
+
+Level 2: Independent Max Import Validation.
+  - Enable ImportBoneAsDummy and import the original and repaired files separately.
+  - Compare node names, parents, Skin bone references, and vertex counts.
+  - Measure Dummy boxes in local and world space.
+  - Compare every mesh vertex in the static pose.
+  - Apply identical local rotations to bones with matching names, then compare every vertex again to verify that skinning remains consistent.
+
+Results in Max:
+  - Both versions contained 173 Dummy objects and 2 meshes.
+  - The meshes had 17318 and 776 vertices, respectively. Each Skin referenced 138 bones.
+  - The repaired bone Dummies had world-space bounding-box diagonals of approximately 1.732 to 2.725.
+  - The original range was approximately 68.191 to 107.276.
+  - All 172 repaired bone Dummies had boxMode=True.
+  - The maximum vertex difference in the static pose was approximately 0.000033 scene units.
+  - After a 20-degree local rotation of Hip, the maximum vertex difference was approximately 0.000043 scene units.
+  - After a 20-degree local rotation of l_skirtA_chain_2, the maximum vertex difference was approximately 0.000033 scene units.
+  - Both rotation tests confirmed actual vertex movement, so an inactive skin deformation could not produce a false pass.
+
+The measured world-space bounding boxes are axis-aligned. Different bone orientations can produce different world-space box diagonals even when the local boxes are the same size. Evaluate local box dimensions together with world-space basis scale.
+
+Level 3: User Import Confirmation.
+  The user imported the repaired output into Max. Their screenshot showed helper boxes at a reasonable size, and they explicitly reported that the result looked very good.
+
+7. Applicability to Other FBX Files
+
+The current script was validated on a static skeleton with positive uniform scaling. Files with animation, constraints, multiple Armatures, meshes beneath the skeleton, nonuniform scaling, negative scaling, shear, special InheritType settings, pivots, or Pre/PostRotation require full transform evaluation and renewed validation. The simplified operation of multiplying every bone translation by k must not be applied to those cases without further analysis.
+
+Animated files also require corresponding animation-track conversion or per-frame evaluation and rebaking, followed by validation of the complete animation. The two local-rotation experiments verified skinning consistency for those tested poses; they did not validate arbitrary animation files.
+
+Maintain both of these criteria:
+  1. Joint world positions, model dimensions, and skinning behavior must remain consistent.
+  2. The scale of the Dummy display basis should be normalized to a range appropriate for the target scene.
+
+LODBox was a reference display setting used to match the appearance in Max. The bones retained the standard LimbNode / Skeleton types. Changing type tags alone, deleting leaf bones, or changing only Size has not been validated as a replacement for this complete procedure.
+
+8. Successful Sample and Reproduction Materials
+
+Successful FBX:
+C:\Users\1\Desktop\Generic 通用 无标题_接缝骨骼尺寸测试.fbx
+
+SHA-256 of the successful FBX:
+2828770a7e5aff448f7f3342d2a75c86b305edacbcd6de3f2b166757beec108f
+
+Experiment directory:
+C:\Users\1\Documents\Codex\2026-09-07\niha\work\fbx_compare_20260908
+
+Key files in that directory:
+  rebuild_dummy_size.py: The repair script used for this case. It contains checks specific to the input structure and is not a finished general-purpose converter.
+  untitled_reference_dummy_size.fbx: The experimental output, identical in content to the successful desktop copy.
+  untitled_reference_dummy_size.json: Validation records for the file transformations and preserved data.
+  validate_dummy_rebuild_max.py: The Max comparison script for the original and repaired files, including rotation and skinning checks.
+  dummy_rebuild_max.json: Max validation results.
+  structure.json and max_imports.json: Structural and import comparisons of the two Generic FBX files before repair.
+
+Existing FBX parser used by the reproduction script:
+C:\Users\1\Desktop\Generic FBX Converter 通用FBX 转换器.py
+
+For future integration into a converter, implement the complete sequence: detect skeleton world-space scaling, rebase transforms while preserving world positions, update all related bind data, and validate both the serialized file and its behavior in a DCC application.
