@@ -195,6 +195,10 @@ BMT 后，完整 Mesh 可以显示；但 uEm4700 有 83 根骨骼，uSm5919 原�
 
 我们刚学会钻木取火，AI 就带着打火机和一桶汽油来了。以前我得先学会工具里的每一步，才能试一个想法。现在我能先说想要什么，在游戏里指出哪儿不对，再和 AI 一起把那一处做到满意。把文件和实际观察留下来，下一个作者就有了自己的起点。
 
+我以前学做 MOD，靠自己试、跟其他作者学，也花过钱上课。今天我还是要学工具、权重和游戏的文件格式。和 AI 合作时，我要能给它合适的工具、原始资源和基础知识，也要看得出成品哪儿不对。比如手指在静止时好好的，握拳时却黏在了一起，知道该拿哪段动作去检验，本身就是一门手艺。
+
+我希望未来的 AI 能掌握互联网上各领域积累的专业知识和实作技巧。即便一种 MOD 从来没人写过教程，只要我说清想实现的效果，它就能自己推理该从哪里入手、安排步骤、制作并验证结果。我期待它有一天能用这种方式完成任何尚无记录的 MOD 任务。
+
 十、最后说明
 
 本文不是合格的完整 MOD 教学。我目前没有足够时间、环境或专业知识去覆盖所有模型、
@@ -452,6 +456,10 @@ the 3D-software template, rebind the mesh, and inspect its skin weights.
 9. Why keep these notes
 
 We'd just figured out how to make fire by rubbing sticks together when AI showed up with a lighter and a can of gasoline. I used to have to learn every tool in the chain before I could try an idea. Now I can describe what I want, point out what looks wrong in the game, and work on that spot with AI. Keeping the files and the observations gives the next modder somewhere to start.
+
+I learned to mod by experimenting, learning from other modders and paying for lessons. I still need that craft today. To work well with AI, I need to give it the right tools, the original assets and enough background on the game. When fingers look fine at rest but stick together in a fist, knowing which animation will expose the problem is a modding skill in its own right.
+
+My hope is that AI will one day command the full range of specialist knowledge and practical skills people have shared online. Even if nobody has ever documented a particular mod, I want to be able to describe the result and have AI reason out where to start, plan the work, build it and test it. I'd like that to be possible for any modding task that has yet to be written up.
 
 10. Final note
 
