@@ -5,15 +5,17 @@ AI Boundaries and Personal RE6 MOD Notes / AI 的边界与个人 RE6 MOD 记录
 中文
 ====
 
-一、开篇：AI 目前的边界
+一、GPT-6.2 Astra 时代的人机协作 MOD（2026-11-24）
 
-AI 现在还不能稳定、完整地理解语音、音效、三维内容、三维软件界面和人的全部操作
-流程。它可以检索资料、阅读文件、整理步骤、提出假设和协助试错，但不能把一次回答
-当成已经验证过的 3D MOD 结论。
+我们给 RE6 的 EM4800 巨型敌人换过一整套人物模型。我定外观、对照原作，在游戏里看它转身和抬手，再指出哪一帧出了问题。GPT-6.2 Astra 写 Blender 和资源处理脚本，修改网格、骨骼和贴图，把结果装回游戏。这次经历让我觉得，AI 已经完全能胜任这类协作 MOD 的工程工作。
 
-本文只是一次简略而系统的个人 RE6 模型 MOD 记录，不是专业教学，也不是适用于所有
-模型、所有游戏或所有软件版本的黄金标准。参数、骨骼、权重、材质和资源合同都可能因
-模型而变；最终仍要回读文件并进游戏验证。
+最早跑进游戏的版本很有说服力。头能正常显示，手却在动作中扭成一团，腰跟着胸口撕开。静止的 Blender 模型看起来没事。我们保留敌人原有的骨架作为动画参照，让脚本按游戏骨骼标识建立映射。在腰部，把原有的总影响量沿高度平滑分给骨盆和两节脊柱。手部则沿三角形的相邻边传播权重，让相贴的两根手指仍能各自弯曲。修接口时还得检查同一位置被 UV 缝拆开的顶点，否则在一个姿势里严丝合缝，换一个姿势又会张开。
+
+辫子带来了另一个问题。它在静止时可以垂到背后，角色一动却像一块硬板，还会穿过躯干。我们为辫子建立了 24 节骨骼（功能 ID 180–203），在驱动躯干的 LMT 动作里每四帧取一次样，并补上末帧。脚本根据根节点移动计算有阻尼的滞后，用随骨骼移动的胶囊体近似躯干和四肢，再把各节的结果写成局部旋转轨。只控制饰品的叠加动作沿用身体动作里的辫子轨。这样动作文件本身就带有发辫运动。剧烈转身时会不会穿模，仍要看对应的游戏动作。
+
+导出时，三组显示和阴影槽复用同一份高精网格，分别写入目标 LOD 编号。脚本把颜色、法线和遮罩烘成 2048 × 2048 的 BM、NM、MM，核对纹理方向和 MRL 引用，再重打 ARC。实机里脸和胸口发白、脚部颜色异常，就是在这一步通过与 Blender 原贴图对照发现的。发布目录收齐了基础敌人、关卡变体和演出资源，共五个 ARC。进游戏验收时，要分别观察可交互敌人和过场中的模型。
+
+目前最花我时间的是人体雕刻。一次调整从正面看修好了胸廓，俯视却偏离原作，侧面还在锁骨和脖子交界处留下像衣领一样的边。代码能限制顶点移动范围，却不能替我决定肩颈怎样过渡、躯干的体积怎样从前面绕到后背。我希望再过几代，AI 对人体解剖、比例和形体艺术的理解，能让人物雕刻连第一稿都经得起多角度检查。
 
 二、获取模型：先找现有工具，再考虑逆向
 
@@ -191,10 +193,7 @@ BMT 后，完整 Mesh 可以显示；但 uEm4700 有 83 根骨骼，uSm5919 原�
 
 九、为什么留下这些记录
 
-如果未来 AI 能真正理解 3D 图形、三维软件和完整 RE6 MOD 工作流，人们或许只需提供
-创意和目标效果，而不必独自掌握所有技术步骤。更远的未来，在版权期限届满且具备合法
-权利的前提下，对游戏资源的充分理解也许能启发用现代引擎做出面向下一代玩家的全新
-演绎；这只是愿景，不是现在的能力，也不是对任何受保护资源的授权。
+我们刚学会钻木取火，AI 就带着打火机和一桶汽油来了。以前我得先学会工具里的每一步，才能试一个想法。现在我能先说想要什么，在游戏里指出哪儿不对，再和 AI 一起把那一处做到满意。把文件和实际观察留下来，下一个作者就有了自己的起点。
 
 十、最后说明
 
@@ -207,17 +206,17 @@ BMT 后，完整 Mesh 可以显示；但 uEm4700 有 83 根骨骼，uSm5919 原�
 English
 -------
 
-1. Opening: the current boundary of AI
+1. Modding with GPT-6.2 Astra (24 November 2026)
 
-AI does not yet reliably and completely understand voice, sound design, 3D
-content, 3D software interfaces, or every human workflow. It can search for
-references, inspect files, organize steps, form hypotheses, and help with
-experiments, but one answer is not a verified 3D-MOD conclusion by itself.
+We replaced the EM4800 giant in Resident Evil 6 with a custom character. I set the art direction, compared the silhouette against the reference and tested the character in motion. Astra wrote the Blender and asset-processing scripts, edited the mesh and rig, rebuilt the textures and packed the result for the game. After shipping that replacement, I trust Astra with the engineering side of a mod like this.
 
-This is a compact personal record of an RE6 model-MOD workflow, not a
-professional tutorial or a gold standard for every model, game, or software
-version. Parameters, skeletons, weights, materials, and resource contracts can
-change from model to model. Always read the output back and verify it in game.
+The first build loaded. The head looked right, but the fingers knotted when the hands moved and a seam opened across the torso. The same mesh looked fine at rest in Blender. We used the enemy's native skeleton as the animation reference and mapped influences by the game's bone identifiers. At the waist, the script redistributed the existing weight smoothly from the pelvis into two spine joints. On the hands it smoothed weights along connected triangle edges so adjacent fingers could still bend independently. Vertices split at a UV seam also needed consistent weights. Two edges can meet perfectly in the bind pose and pull apart the moment the actor twists.
+
+The braid hung behind the character in the bind pose, then stuck out like a board or passed through the torso in motion. We gave it 24 joints (function IDs 180–203). For each LMT clip that drove the body, the script sampled every fourth frame and included the final frame. It derived damped follow-through from the root motion, used capsules attached to the torso and limbs to estimate clearance, and wrote local rotation tracks for the chain. Accessory-only overlays inherited the active body's braid motion. That gave the game actual animation data to play. Sharp turns still need testing in the corresponding clip.
+
+For export, we reused the same full-detail mesh in three display and shadow slots with their respective LOD identifiers. The script built 2048 × 2048 base-color, normal and mask textures (BM, NM and MM), checked image orientation and MRL references, and rebuilt the ARCs. Comparing the game against the Blender textures exposed pale patches on the face and chest and a mismatch on the feet. The release set contained five ARCs covering the base enemy, stage variants and a cutscene resource. Gameplay and cutscenes each needed their own visual check.
+
+Figure sculpting took me the longest. One chest edit looked convincing from the front, drifted away from the reference from above and left a ridge like a collar where the shoulder met the neck. A script can limit which vertices move. Deciding how the clavicle sits under the skin or how the rib cage carries around into the back still takes an artist's eye. I think it may take a few more model generations, and a better grasp of both anatomy and figure art, before I can trust a first sculpt from every angle.
 
 2. Getting models: find established tools before reverse engineering
 
@@ -452,12 +451,7 @@ the 3D-software template, rebind the mesh, and inspect its skin weights.
 
 9. Why keep these notes
 
-If future AI can genuinely understand 3D graphics, 3D software, and the whole
-RE6 MOD workflow, people may be able to supply creative direction without
-mastering every technical step alone. Farther in the future, after copyright
-terms have expired and lawful rights exist, a deep understanding of game
-resources may inspire a modern-engine reinterpretation for later generations.
-That is a vision, not a current capability or permission to use protected work.
+We'd just figured out how to make fire by rubbing sticks together when AI showed up with a lighter and a can of gasoline. I used to have to learn every tool in the chain before I could try an idea. Now I can describe what I want, point out what looks wrong in the game, and work on that spot with AI. Keeping the files and the observations gives the next modder somewhere to start.
 
 10. Final note
 
