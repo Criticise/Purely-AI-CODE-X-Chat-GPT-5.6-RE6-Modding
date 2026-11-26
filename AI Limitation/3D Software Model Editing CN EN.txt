@@ -7,6 +7,8 @@ AI Boundaries and Personal RE6 MOD Notes / AI 的边界与个人 RE6 MOD 记录
 
 一、GPT-6.2 Astra 与 MMD 模型编辑
 
+让 GPT-6.2 Astra 直接检查运行中的 BH6，在实机截图上圈出缺陷，据此修正 MMD 网格。比起反复在 Blender 里离线对照原模型和 MOD，这是我用过最省 token、效率最高的做法。
+
 在 RE6（BH6）里重现网格问题，暂停在看得最清楚的那一帧，在截图上圈出异常位置。让 GPT-6.2 Astra 用本机只读工具检查运行中的游戏，确认加载的资源、当前动作和骨骼姿势。截图说明哪里需要改，骨骼姿势帮助判断该移动顶点，还是该调整蒙皮权重。
 
 在 Blender 里修改受影响的区域。若是权重问题，先核对顶点由哪些骨骼驱动，再沿网格相邻的边调整权重过渡。同一位置因 UV 接缝而拆开的顶点也要一起检查。重新打包、重载资源，再在游戏里回放整段动作，尤其要看缺陷帧的前后过渡。这种做法减少了反复进行离线模型对照的轮次，节省时间和 token。
@@ -209,6 +211,8 @@ English
 -------
 
 1. Editing MMD models with GPT-6.2 Astra
+
+Have GPT-6.2 Astra inspect Resident Evil 6 (BH6) while it is running. Circle the defect in an in-game screenshot and use that evidence to fix the MMD mesh. This skips repeated side-by-side comparisons of the original and modded meshes offline in Blender. It is the fastest workflow I have used and the one that uses the fewest tokens.
 
 Reproduce the mesh defect in Resident Evil 6 (BH6). Pause where it is easiest to see and circle it in a screenshot. Have GPT-6.2 Astra inspect the running game with local read-only tools to identify the loaded asset, animation and bone pose. The screenshot shows where the shape looks wrong. The pose helps you decide whether to move vertices or adjust their skin weights.
 
