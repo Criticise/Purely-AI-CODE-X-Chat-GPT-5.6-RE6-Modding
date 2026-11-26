@@ -17,6 +17,12 @@ AI Boundaries and Personal RE6 MOD Notes / AI 的边界与个人 RE6 MOD 记录
 
 目前最花我时间的是人体雕刻。一次调整从正面看修好了胸廓，俯视却偏离原作，侧面还在锁骨和脖子交界处留下像衣领一样的边。代码能限制顶点移动范围，却不能替我决定肩颈怎样过渡、躯干的体积怎样从前面绕到后背。我希望再过几代，AI 对人体解剖、比例和形体艺术的理解，能让人物雕刻连第一稿都经得起多角度检查。
 
+实机修正 MMD 网格（2026-11-26）
+
+做 EM4700 的婚纱和春日两套替换时，我找到最省时间和 token 的办法：在 BH6 里重现问题，让 GPT-6.2 Astra 通过本机只读工具检查正在运行的游戏。我截一张图，圈出有问题的部位，再说清哪个动作、哪一侧、哪一刻看着不对。Astra 先确认场上的角色加载了哪一版 ARC，再读取它正在播放的动作、帧号和最终骨骼姿势。这样我说“右腿在踩下去以后突然往侧面跳”，它就知道该追哪条腿、哪次动作切换。
+
+春日有一次踩踏前半段已经正确，后半段又跳回去了。连续跟踪同一只敌人，才看见它从 146 切到 148、154，再回到 146。只回放 146 会错过问题。婚纱的截图则标出了肩头到上臂的鼓包。把当前包的皮肤网格放回实机采到的姿势，能直接量出上臂中心线偏离肩到肘骨轴多少，再有针对性地修截面和权重。原始 MMD 仍适合核对体型，Blender 用来编辑。每次改好后只回包受影响的资源，重载角色，确认新网格已生效，再从原来的角度看同一个动作。这比反复在 Blender 里并排摆原版和 MOD、看图猜下一步，少走了很多轮。
+
 二、获取模型：先找现有工具，再考虑逆向
 
 模型可能来自手机的岛屿 AI APP、模之屋等允许使用的模型社区、自己拥有并获准处理的
@@ -221,6 +227,12 @@ The braid hung behind the character in the bind pose, then stuck out like a boar
 For export, we reused the same full-detail mesh in three display and shadow slots with their respective LOD identifiers. The script built 2048 × 2048 base-color, normal and mask textures (BM, NM and MM), checked image orientation and MRL references, and rebuilt the ARCs. Comparing the game against the Blender textures exposed pale patches on the face and chest and a mismatch on the feet. The release set contained five ARCs covering the base enemy, stage variants and a cutscene resource. Gameplay and cutscenes each needed their own visual check.
 
 Figure sculpting took me the longest. One chest edit looked convincing from the front, drifted away from the reference from above and left a ridge like a collar where the shoulder met the neck. A script can limit which vertices move. Deciding how the clavicle sits under the skin or how the rib cage carries around into the back still takes an artist's eye. I think it may take a few more model generations, and a better grasp of both anatomy and figure art, before I can trust a first sculpt from every angle.
+
+Fitting an MMD mesh in the running game (26 November 2026)
+
+The fastest and most token-efficient workflow I found for our two EM4700 replacements was to reproduce the fault in BH6 and let GPT-6.2 Astra inspect the running game with local read-only tools. I circle the defect in a screenshot and describe the side, the move and the moment it goes wrong. Astra checks which ARC the actor actually loaded, then samples the active animation clips, frame numbers and final bone poses. “The right leg snaps sideways just after the stomp” gives us a specific transition to investigate.
+
+On the spring outfit, the first part of the stomp already looked right. Tracking one enemy continuously revealed the sequence 146 → 148 → 154 → 146. Replaying clip 146 alone missed the snap. On the wedding outfit, I marked a bulge where the shoulder met the upper arm. Applying the captured pose to the mesh from the installed ARC let us measure how far the arm's centreline sat from the shoulder-to-elbow bone axis, then adjust the cross-section and skin weights. I still use the original MMD model to check proportions and Blender to edit the mesh. After repacking the affected resource, we reload the actor, verify that the new mesh is active and repeat the move from the same angle. That last check saved us whole rounds of side-by-side Blender comparisons on the wrong pose or an old mesh.
 
 2. Getting models: find established tools before reverse engineering
 
